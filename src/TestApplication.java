@@ -1,5 +1,4 @@
 import java.util.InputMismatchException;
-import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class TestApplication {
@@ -27,10 +26,6 @@ public class TestApplication {
             System.err.println("Valor deve ser um número natural");
             sc.close();
             return;
-        } catch (NoSuchElementException e) {
-            System.err.println("Erro: linha não encontrada, tente novamente");
-            sc.close();
-            return;
         }
         System.out.println("");
 
@@ -52,15 +47,7 @@ public class TestApplication {
             System.out.println("Esperando por notificações...");
             System.out.println("");
 
-            try {
-                command = sc.nextLine().toUpperCase();
-            } catch (NoSuchElementException e) {
-                System.err.println(
-                    "Erro: linha não encontrada, tente novamente"
-                );
-                continue;
-            }
-
+            command = sc.nextLine().toUpperCase();
             switch (command) {
                 case "EXIT":
                     System.out.println("Saindo...");
@@ -73,24 +60,20 @@ public class TestApplication {
 
                     try {
                         destinationUCSAPId = sc.nextShort();
-                        sc.nextLine(); // Limpa o buffer
-                        System.out.println("");
-
-                        System.out.printf("Digite a Mensagem a ser enviada: ");
-
-                        destinationMessage = sc.nextLine();
-                        System.out.println("");
                     } catch (InputMismatchException ime) {
+                        sc.nextLine(); // Limpa o buffer
                         System.err.println(
                             "Valor do identificador deve ser um número natural"
                         );
                         continue;
-                    } catch (NoSuchElementException e) {
-                        System.err.println(
-                            "Erro: linha não encontrada, tente novamente"
-                        );
-                        continue;
                     }
+                    sc.nextLine(); // Limpa o buffer
+                    System.out.println("");
+
+                    System.out.printf("Digite a Mensagem a ser enviada: ");
+
+                    destinationMessage = sc.nextLine();
+                    System.out.println("");
 
                     if (
                         unicastProtocol.UPDataReq(
