@@ -52,8 +52,11 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
         return pdu;
     }
 
-    private String UnpackData(String protocol_data_unit) throws ParseException {
+    private String UnpackData(String protocol_data_unit) {
         Matcher matcher = PATTERN.matcher(protocol_data_unit);
+        if (!matcher.matches()) {
+            throw new RuntimeException("Error trying to unpack Unicast Data Unit:\n\"%s\"".formatted(protocol_data_unit));
+        }
         String size_str = matcher.group(1);
         String unpacked_data = matcher.group(2);
 
@@ -108,11 +111,7 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
             byte[] data = packet.getData();
             String data_str = new String(data, StandardCharsets.UTF_8);
             String unpacked;
-            try {
-                unpacked = UnpackData(data_str);
-            } catch (ParseException e) {
-                throw new RuntimeException("Error while trying to unpack Unicast Protocol Data Unit:\n\"%s\"".formatted(data_str));
-            }
+            unpacked = UnpackData(data_str);
 
             InetAddress sender_address = packet.getAddress();
             short sender_port = (short) packet.getPort();
