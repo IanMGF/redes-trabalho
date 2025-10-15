@@ -1,20 +1,27 @@
 import java.io.File;
+import java.io.IOException;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class UnicastProtocol implements UnicastServiceInterface {
+public class UnicastProtocol implements UnicastServiceInterface, Runnable {
     private static final String INITIAL_STRING = "UPDREQPDU";
     private static final Pattern PATTERN = Pattern.compile(INITIAL_STRING + " ([0-9]+) ((.|\n|\r)*)");
 
     private short ucsap_id;
     private short port;
 
+    private DatagramSocket socket;
+    private final UnicastServiceUserInterface user_interface;
+
     private final UnicastConfiguration configuration;
 
-    UnicastProtocol(short ucsap_id, short port) {
+    UnicastProtocol(short ucsap_id, short port, UnicastServiceUserInterface user_interface) {
         this.ucsap_id = ucsap_id;
         this.port = port;
+        this.user_interface = user_interface;
 
         this.configuration = UnicastConfiguration.LoadFromFile(new File("unicast.conf"));
         IPAddressAndPort address_and_port = configuration.GetAddress(ucsap_id);
@@ -26,11 +33,17 @@ public class UnicastProtocol implements UnicastServiceInterface {
     private String PackData(String data) {
         int size = data.length();
 
-        return INITIAL_STRING +
+        String pdu = INITIAL_STRING +
                 " " +
                 size +
                 " " +
                 data;
+
+        if (pdu.length() > 1024) {
+            pdu = pdu.substring(0, 1024);
+        }
+
+        return pdu;
     }
 
     private String UnpackData(String protocol_data_unit) throws ParseException {
@@ -52,8 +65,55 @@ public class UnicastProtocol implements UnicastServiceInterface {
 
     @Override
     public boolean UPDataReq(short id, String data) {
+        InetAddress address;
         String packed_data = PackData(data);
-        // Send through UDP
-        return false;
+        int size = packed_data.length();
+
+        IPAddressAndPort address_and_port = configuration.GetAddress(id);
+
+        if (address_and_port == null) {
+            return false;
+        }
+
+        try {
+            address = InetAddress.getByName(address_and_port.address);
+        } catch (UnknownHostException e) {
+            return false;
+        }
+
+        byte[] data_bytes = packed_data.getBytes();
+        DatagramPacket packet = new DatagramPacket(data_bytes, size, address, address_and_port.port);
+        try {
+            socket.send(packet);
+        } catch (IOException e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void run() {
+        byte[] recv_buffer = new byte[1024];
+        DatagramPacket packet;
+
+        while (true) {
+            packet = new DatagramPacket(recv_buffer, 1024);
+            try {
+                socket.receive(packet);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            byte[] data = packet.getData();
+            String data_str = new String(data, StandardCharsets.UTF_8);
+
+            InetAddress sender_address = packet.getAddress();
+            short sender_port = (short) packet.getPort();
+
+            short ucsap_id = configuration.GetId(new IPAddressAndPort(sender_address.toString(), sender_port));
+
+            user_interface.UPDataInd(ucsap_id, data_str);
+        }
     }
 }
