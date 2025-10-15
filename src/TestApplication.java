@@ -29,7 +29,8 @@ public class TestApplication {
             new NotificationReceiver()
         );
 
-        (new Thread((Runnable) unicastProtocol)).start();
+        Thread receiverThread = new Thread((Runnable) unicastProtocol);
+        receiverThread.start();
         System.out.println("Aplicação de Testes Iniciada");
         System.out.println("Para enviar mensagens digite SEND");
         System.out.println("Para sair digite EXIT");
@@ -40,7 +41,7 @@ public class TestApplication {
             command = sc.nextLine().toUpperCase();
             switch (command) {
                 case "EXIT":
-                    System.out.println("Sair...");
+                    System.out.println("Saindo...");
                     isRunning = false;
                     break;
                 case "SEND":
@@ -76,5 +77,10 @@ public class TestApplication {
             }
         }
         sc.close();
+        try {
+            receiverThread.interrupt();
+        } catch (SecurityException se) {
+            System.err.println(se);
+        }
     }
 }
