@@ -81,14 +81,8 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
             return false;
         }
 
-        try {
-            address = InetAddress.getByName(address_and_port.address);
-        } catch (UnknownHostException e) {
-            return false;
-        }
-
         byte[] data_bytes = packed_data.getBytes();
-        DatagramPacket packet = new DatagramPacket(data_bytes, size, address, address_and_port.port);
+        DatagramPacket packet = new DatagramPacket(data_bytes, size, address_and_port.address, address_and_port.port);
         try {
             socket.send(packet);
         } catch (IOException e) {
@@ -117,7 +111,7 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
             InetAddress sender_address = packet.getAddress();
             short sender_port = (short) packet.getPort();
 
-            short ucsap_id = configuration.GetId(new IPAddressAndPort(sender_address.toString(), sender_port));
+            short ucsap_id = configuration.GetId(new IPAddressAndPort(sender_address, sender_port));
 
             user_interface.UPDataInd(ucsap_id, data_str);
         }
