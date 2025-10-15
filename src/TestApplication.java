@@ -1,3 +1,5 @@
+import java.util.InputMismatchException;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class TestApplication {
@@ -14,12 +16,22 @@ public class TestApplication {
         System.out.println("");
 
         System.out.printf("Por favor, indique seu Identificador UCSAP: ");
-        entityUCSAPId = sc.nextShort();
-        sc.nextLine(); // Limpa o buffer
+        try {
+            entityUCSAPId = sc.nextShort();
+            sc.nextLine(); // Limpa o buffer
 
-        System.out.printf("Por favor, indique sua Porta: ");
-        entityPort = sc.nextShort();
-        sc.nextLine(); // Limpa o buffer
+            System.out.printf("Por favor, indique sua Porta: ");
+            entityPort = sc.nextShort();
+            sc.nextLine(); // Limpa o buffer
+        } catch (InputMismatchException ime) {
+            System.err.println("Valor deve ser um número natural");
+            sc.close();
+            return;
+        } catch (NoSuchElementException e) {
+            System.err.println("Erro: linha não encontrada, tente novamente");
+            sc.close();
+            return;
+        }
         System.out.println("");
 
         // Instanciação do UnicastProtocol
@@ -29,8 +41,10 @@ public class TestApplication {
             new NotificationReceiver()
         );
 
+        // Intanciação do thread receptor
         Thread receiverThread = new Thread((Runnable) unicastProtocol);
         receiverThread.start();
+
         System.out.println("Aplicação de Testes Iniciada");
         System.out.println("Para enviar mensagens digite SEND");
         System.out.println("Para sair digite EXIT");
@@ -38,7 +52,15 @@ public class TestApplication {
             System.out.println("Esperando por notificações...");
             System.out.println("");
 
-            command = sc.nextLine().toUpperCase();
+            try {
+                command = sc.nextLine().toUpperCase();
+            } catch (NoSuchElementException e) {
+                System.err.println(
+                    "Erro: linha não encontrada, tente novamente"
+                );
+                continue;
+            }
+
             switch (command) {
                 case "EXIT":
                     System.out.println("Saindo...");
@@ -48,13 +70,27 @@ public class TestApplication {
                     System.out.printf(
                         "Digite o Identificador UCSAP de destino: "
                     );
-                    destinationUCSAPId = sc.nextShort();
-                    sc.nextLine(); // Limpa o buffer
-                    System.out.println("");
 
-                    System.out.printf("Digite a Mensagem a ser enviada: ");
-                    destinationMessage = sc.nextLine();
-                    System.out.println("");
+                    try {
+                        destinationUCSAPId = sc.nextShort();
+                        sc.nextLine(); // Limpa o buffer
+                        System.out.println("");
+
+                        System.out.printf("Digite a Mensagem a ser enviada: ");
+
+                        destinationMessage = sc.nextLine();
+                        System.out.println("");
+                    } catch (InputMismatchException ime) {
+                        System.err.println(
+                            "Valor do identificador deve ser um número natural"
+                        );
+                        continue;
+                    } catch (NoSuchElementException e) {
+                        System.err.println(
+                            "Erro: linha não encontrada, tente novamente"
+                        );
+                        continue;
+                    }
 
                     if (
                         unicastProtocol.UPDataReq(
