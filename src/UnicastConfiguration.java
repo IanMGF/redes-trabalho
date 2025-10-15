@@ -33,11 +33,18 @@ public class UnicastConfiguration {
             }
 
             short ucsap_id = (short) Integer.parseInt(matcher.group(1));
-            String address = matcher.group(2);
+            String address_str = matcher.group(2);
             short port = (short) Integer.parseInt(matcher.group(3));
 
             if (port <= 1024) {
                 throw new RuntimeException("Port less than 1024 found in file configuration");
+            }
+
+            InetAddress address = null;
+            try {
+                address = InetAddress.getByName(address_str);
+            } catch (UnknownHostException e) {
+                throw new RuntimeException("Address not found: %s".formatted(address_str));
             }
             IPAddressAndPort address_and_port = new IPAddressAndPort(address, port);
 
@@ -52,24 +59,7 @@ public class UnicastConfiguration {
     }
     public short GetId(IPAddressAndPort address_and_port) {
         return configuration_map.entrySet().stream()
-                .filter(entry -> {
-                    IPAddressAndPort addr_and_port_on_set = entry.getValue();
-                    InetAddress address_a, address_b;
-
-                    try {
-                        address_a = InetAddress.getByName(addr_and_port_on_set.address);
-                    } catch (UnknownHostException e) {
-                        return false;
-                    }
-
-                    try {
-                        address_b = InetAddress.getByName(address_and_port.address);
-                    } catch (UnknownHostException e) {
-                        return false;
-                    }
-
-                    return (address_a.equals(address_b) && addr_and_port_on_set.port.equals(address_and_port.port));
-                })
+                .filter(entry -> entry.getValue().equals(address_and_port))
                 .findFirst()
                 .orElseThrow()
                 .getKey();
