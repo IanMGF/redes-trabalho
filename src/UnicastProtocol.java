@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +37,7 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
     }
 
     private String PackData(String data) {
-        int size = data.length();
+        int size = data.getBytes().length;
 
         String pdu = INITIAL_STRING +
                 " " +
@@ -44,8 +45,8 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
                 " " +
                 data;
 
-        if (pdu.length() > 1024) {
-            pdu = pdu.substring(0, 1024);
+        if (pdu.getBytes(StandardCharsets.UTF_8).length > 1024) {
+            throw new RuntimeException("Data too long");
         }
 
         return pdu;
@@ -58,15 +59,17 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
         }
         String size_str = matcher.group(1);
         String unpacked_data = matcher.group(2);
-
+        byte[] unpacked_bytes = unpacked_data.getBytes(StandardCharsets.UTF_8);
         int size = Integer.parseInt(size_str);
 
-        if (unpacked_data.length() > size) {
-            unpacked_data = unpacked_data.substring(0, size);
-        } else if (unpacked_data.length() < size) {
+        if (unpacked_bytes.length > size) {
+            unpacked_bytes = Arrays.copyOfRange(unpacked_bytes, 0, size);
+        } else if (unpacked_bytes.length < size) {
             // Pad the result
-            unpacked_data = String.format("%" + size + "s", unpacked_data);
+            unpacked_bytes = Arrays.copyOf(unpacked_bytes, size);
         }
+
+        unpacked_data = new String(unpacked_bytes, StandardCharsets.UTF_8);
 
         return unpacked_data;
     }
@@ -75,7 +78,7 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
     public boolean UPDataReq(short id, String data) {
         InetAddress address;
         String packed_data = PackData(data);
-        int size = packed_data.length();
+        int size = packed_data.getBytes(StandardCharsets.UTF_8).length;
 
         IPAddressAndPort address_and_port = configuration.GetAddress(id);
 
@@ -96,7 +99,6 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
 
     @Override
     public void run() {
-        byte[] recv_buffer = new byte[1024];
         DatagramPacket packet;
 
         while (true) {
@@ -104,6 +106,7 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
                 break;
             }
 
+            byte[] recv_buffer = new byte[1024];
             packet = new DatagramPacket(recv_buffer, 1024);
             try {
                 socket.receive(packet);
