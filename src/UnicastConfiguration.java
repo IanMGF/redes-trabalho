@@ -25,6 +25,10 @@ public class UnicastConfiguration {
         for (String line: reader.lines().toList()) {
             Matcher matcher = PATTERN.matcher(line);
 
+            if(!matcher.matches()) {
+                throw new RuntimeException("Line does not follow format of <id> <host> <port>:\n\"%s\"".formatted(line));
+            }
+
             short ucsap_id = (short) Integer.parseInt(matcher.group(1));
             String address = matcher.group(2);
             short port = (short) Integer.parseInt(matcher.group(3));
