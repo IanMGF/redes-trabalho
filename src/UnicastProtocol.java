@@ -28,6 +28,12 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
         if (address_and_port.port != port) {
             throw new IllegalArgumentException("Self not found in configuration file");
         }
+
+        try {
+            socket = new DatagramSocket(port);
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String PackData(String data) {
