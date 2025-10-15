@@ -2,7 +2,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -101,6 +100,10 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
         DatagramPacket packet;
 
         while (true) {
+            if(Thread.currentThread().isInterrupted()) {
+                break;
+            }
+
             packet = new DatagramPacket(recv_buffer, 1024);
             try {
                 socket.receive(packet);
