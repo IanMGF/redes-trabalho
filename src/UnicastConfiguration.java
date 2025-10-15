@@ -2,7 +2,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,7 +52,24 @@ public class UnicastConfiguration {
     }
     public short GetId(IPAddressAndPort address_and_port) {
         return configuration_map.entrySet().stream()
-                .filter(entry -> entry.getValue() == address_and_port)
+                .filter(entry -> {
+                    IPAddressAndPort addr_and_port_on_set = entry.getValue();
+                    InetAddress address_a, address_b;
+
+                    try {
+                        address_a = InetAddress.getByName(addr_and_port_on_set.address);
+                    } catch (UnknownHostException e) {
+                        return false;
+                    }
+
+                    try {
+                        address_b = InetAddress.getByName(address_and_port.address);
+                    } catch (UnknownHostException e) {
+                        return false;
+                    }
+
+                    return (address_a.equals(address_b) && addr_and_port_on_set.port.equals(address_and_port.port));
+                })
                 .findFirst()
                 .orElseThrow()
                 .getKey();
