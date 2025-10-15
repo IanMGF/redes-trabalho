@@ -107,13 +107,19 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
 
             byte[] data = packet.getData();
             String data_str = new String(data, StandardCharsets.UTF_8);
+            String unpacked;
+            try {
+                unpacked = UnpackData(data_str);
+            } catch (ParseException e) {
+                throw new RuntimeException("Error while trying to unpack Unicast Protocol Data Unit:\n\"%s\"".formatted(data_str));
+            }
 
             InetAddress sender_address = packet.getAddress();
             short sender_port = (short) packet.getPort();
 
             short ucsap_id = configuration.GetId(new IPAddressAndPort(sender_address, sender_port));
 
-            user_interface.UPDataInd(ucsap_id, data_str);
+            user_interface.UPDataInd(ucsap_id, unpacked);
         }
     }
 }
