@@ -49,7 +49,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
             new File("unicast.conf")
         );
         IPAddressAndPort ipAddressAndPort = configuration.GetAddress(ucsapId);
-        if (ipAddressAndPort.port != port) {
+        if (ipAddressAndPort == null || ipAddressAndPort.port != port) {
             throw new IllegalArgumentException(
                 "Self not found in configuration file"
             );
