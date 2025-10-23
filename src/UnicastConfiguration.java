@@ -30,10 +30,10 @@ public class UnicastConfiguration {
      *
      * @param file The file to read the configuration from
      * @return A configuration loaded from the file
-     * @throws FileNotFoundException
-     * @throws UnknownHostException
-     * @throws InvalidPortException
-     * @throws InvalidFormatException
+     * @throws FileNotFoundException If `file` could not be found
+     * @throws UnknownHostException If a host from `unicast.conf` is not valid
+     * @throws InvalidPortException If the port is bigger than 1024
+     * @throws InvalidFormatException If the format of the file is wrong
      */
     public static UnicastConfiguration LoadFromFile(File file)
         throws FileNotFoundException, UnknownHostException, InvalidPortException, InvalidFormatException {
