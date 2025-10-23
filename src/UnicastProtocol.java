@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// TODO: Move thread start and kill logic to UnicastProtocol class
 
 /**
  * @author Ian Marcos Gomes e Freitas
@@ -14,22 +13,20 @@ import java.util.regex.Pattern;
  *
  *
  */
-public class UnicastProtocol implements UnicastServiceInterface, Runnable {
+public class UnicastProtocol implements UnicastServiceInterface {
     private static final String INITIAL_STRING = "UPDREQPDU";
     private static final Pattern PATTERN = Pattern.compile(INITIAL_STRING + " ([0-9]+) ((.|\n|\r)*)");
 
-    private short ucsapId;
-    private short port;
+    private final short ucsapId;
 
-    private DatagramSocket socket;
-    private final UnicastServiceUserInterface userInterface;
+    private final DatagramSocket socket;
+    private final Thread listenerThread;
+    private final UnicastListener listener;
 
     private final UnicastConfiguration configuration;
 
     UnicastProtocol(short ucsapId, short port, UnicastServiceUserInterface userInterface) {
         this.ucsapId = ucsapId;
-        this.port = port;
-        this.userInterface = userInterface;
 
         this.configuration = UnicastConfiguration.LoadFromFile(new File("unicast.conf"));
         IPAddressAndPort ipAddressAndPort = configuration.GetAddress(ucsapId);
@@ -42,6 +39,9 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
         } catch (SocketException e) {
             throw new RuntimeException(e);
         }
+
+        listener = new UnicastListener(socket, userInterface, configuration);
+        listenerThread = new Thread(listener);
     }
 
     /**
@@ -51,7 +51,7 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
      * @return The string of bytes containing the data, wrapped in a protocol data unit
      * @throws RuntimeException If the data sent has over 1009 bytes, which would result in a PDU longer than 1024 bytes
      */
-    private String PackData(String data) {
+    static String PackData(String data) {
         int size = data.getBytes().length;
 
         String pdu = INITIAL_STRING +
@@ -75,7 +75,7 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
      * @return The original unpacked data
      * @throws RuntimeException If the string passed does NOT follow the format of the PDU
      */
-    private String UnpackData(String protocolDataUnit) throws RuntimeException {
+    static String UnpackData(String protocolDataUnit) throws RuntimeException {
         Matcher matcher = PATTERN.matcher(protocolDataUnit);
         if (!matcher.matches()) {
             throw new RuntimeException("Error trying to unpack Unicast Data Unit:\n\"%s\"".formatted(protocolDataUnit));
@@ -114,10 +114,36 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
         return true;
     }
 
+    /**
+     * @author Ian Marcos Gomes e Freitas
+     * Stops the listener thread
+     */
+    public void stop() {
+        listenerThread.interrupt();
+        listener.stop();
+    }
+
+    public short getId() {
+        return ucsapId;
+    }
+}
+
+class UnicastListener implements Runnable {
+    private final DatagramSocket socket;
+    private final UnicastServiceUserInterface userInterface;
+    private final UnicastConfiguration configuration;
+    private boolean running;
+
+    UnicastListener(DatagramSocket socket, UnicastServiceUserInterface userInterface, UnicastConfiguration configuration) {
+        this.socket = socket;
+        this.userInterface = userInterface;
+        this.configuration = configuration;
+        running = true;
+    }
+
     @Override
     public void run() {
         DatagramPacket packet;
-        boolean running = true;
 
         while (running) {
             if(Thread.currentThread().isInterrupted()) {
@@ -135,7 +161,7 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
             byte[] data = packet.getData();
             String dataStr = new String(data, StandardCharsets.UTF_8);
             String unpacked;
-            unpacked = UnpackData(dataStr);
+            unpacked = UnicastProtocol.UnpackData(dataStr);
 
             InetAddress senderAddress = packet.getAddress();
             short senderPort = (short) packet.getPort();
@@ -144,5 +170,10 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
 
             userInterface.UPDataInd(ucsapId, unpacked);
         }
+    }
+
+    public void stop() {
+        socket.close();
+        running = false;
     }
 }
