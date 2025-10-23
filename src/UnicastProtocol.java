@@ -1,3 +1,5 @@
+import exceptions.InvalidFormatException;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.*;
@@ -10,8 +12,6 @@ import java.util.regex.Pattern;
 /**
  * @author Ian Marcos Gomes e Freitas
  * @author João Roberto de Moraes Neto
- *
- *
  */
 public class UnicastProtocol implements UnicastServiceInterface {
     private static final String INITIAL_STRING = "UPDREQPDU";
@@ -34,11 +34,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
             throw new IllegalArgumentException("Self not found in configuration file");
         }
 
-        try {
-            socket = new DatagramSocket(port);
-        } catch (SocketException e) {
-            throw new RuntimeException(e);
-        }
+        socket = new DatagramSocket(port);
 
         listener = new UnicastListener(socket, userInterface, configuration);
         listenerThread = new Thread(listener);
@@ -75,10 +71,10 @@ public class UnicastProtocol implements UnicastServiceInterface {
      * @return The original unpacked data
      * @throws RuntimeException If the string passed does NOT follow the format of the PDU
      */
-    static String UnpackData(String protocolDataUnit) throws RuntimeException {
+    static String UnpackData(String protocolDataUnit) throws InvalidFormatException {
         Matcher matcher = PATTERN.matcher(protocolDataUnit);
         if (!matcher.matches()) {
-            throw new RuntimeException("Error trying to unpack Unicast Data Unit:\n\"%s\"".formatted(protocolDataUnit));
+            throw new InvalidFormatException("Error trying to unpack Unicast Data Unit:\n\"%s\"".formatted(protocolDataUnit));
         }
         String sizeStr = matcher.group(1);
         String unpackedData = matcher.group(2);
@@ -161,7 +157,11 @@ class UnicastListener implements Runnable {
             byte[] data = packet.getData();
             String dataStr = new String(data, StandardCharsets.UTF_8);
             String unpacked;
-            unpacked = UnicastProtocol.UnpackData(dataStr);
+            try {
+                unpacked = UnicastProtocol.UnpackData(dataStr);
+            } catch (InvalidFormatException e) {
+                throw new RuntimeException(e);
+            }
 
             InetAddress senderAddress = packet.getAddress();
             short senderPort = (short) packet.getPort();
