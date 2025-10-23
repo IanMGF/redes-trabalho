@@ -17,8 +17,8 @@ class NotificationReceiver implements UnicastServiceUserInterface {
      * Notifies the user when a message was received from UnicastProtocol
      * by printing it on the screen.
      *
-     * @params ucsapId The message's sender UnicastProtocol Identifier number
-     * @params notification A string containing the message sent
+     * @param ucsapId The message's sender UnicastProtocol Identifier number
+     * @param notification A string containing the message sent
      */
     @Override
     public void UPDataInd(short ucsapId, String notification) {
