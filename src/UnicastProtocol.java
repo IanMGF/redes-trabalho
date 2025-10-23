@@ -30,8 +30,11 @@ public class UnicastProtocol implements UnicastServiceInterface {
      * @param ucsapId Unicast service ID, defined in the `unicast.conf` file
      * @param port Port at which the protocol will start
      * @param userInterface Service user interface. It's `UPDataInd` method will be called whenever a new message is received
-     * @throws IllegalArgumentException Exception thrown if the port passed to the initializer does not match the one found in `unicast.conf`
-     * @throws IOException Exception thrown if the file failed to close
+     * @throws IllegalArgumentException If the port passed to the initializer does not match the one found in `unicast.conf`
+     * @throws FileNotFoundException If `unicast.conf` was not found
+     * @throws UnknownHostException If a host within `unicast.conf`could not be found
+     * @throws InvalidFormatException If `unicast.conf` is not properly formatted
+     * @throws SocketException If the socket could not be opened or bound
      */
     UnicastProtocol(
         short ucsapId,
