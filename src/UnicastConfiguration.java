@@ -1,3 +1,6 @@
+import exceptions.InvalidFormatException;
+import exceptions.InvalidPortException;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -23,8 +26,17 @@ public class UnicastConfiguration {
     private final HashMap<Short, IPAddressAndPort> configurationMap =
         new HashMap<>();
 
+    /** Reads
+     *
+     * @param file The file to read the configuration from
+     * @return A configuration loaded from the file
+     * @throws FileNotFoundException
+     * @throws UnknownHostException
+     * @throws InvalidPortException
+     * @throws InvalidFormatException
+     */
     public static UnicastConfiguration LoadFromFile(File file)
-        throws FileNotFoundException, IOException, UnknownHostException {
+        throws FileNotFoundException, UnknownHostException, InvalidPortException, InvalidFormatException {
         UnicastConfiguration configuration = new UnicastConfiguration();
 
         BufferedReader reader;
@@ -34,8 +46,12 @@ public class UnicastConfiguration {
             Matcher matcher = PATTERN.matcher(line);
 
             if (!matcher.matches()) {
-                reader.close();
-                throw new RuntimeException(
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    System.err.println(e.getMessage());
+                }
+                throw new InvalidFormatException(
                     "Line does not follow format of <id> <host> <port>:\n\"%s\"".formatted(
                         line
                     )
@@ -47,9 +63,13 @@ public class UnicastConfiguration {
             short port = (short) Integer.parseInt(matcher.group(3));
 
             if (port <= 1024) {
-                reader.close();
-                throw new RuntimeException(
-                    "Port less than 1024 found in file configuration"
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    System.err.println(e.getMessage());
+                }
+                throw new InvalidPortException(
+                    port, "Port less than 1024 found in file configuration"
                 );
             }
 
@@ -64,7 +84,11 @@ public class UnicastConfiguration {
             configuration.configurationMap.put(ucsapId, address_and_port);
         }
 
-        reader.close();
+        try {
+            reader.close();
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
 
         return configuration;
     }
