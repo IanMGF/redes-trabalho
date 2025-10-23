@@ -36,7 +36,7 @@ class NotificationReceiver implements UnicastServiceUserInterface {
  */
 public class TestApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         // Declaração das variáveis
         boolean isRunning = true;
         short entityUCSAPId, entityPort, destinationUCSAPId;
@@ -47,15 +47,13 @@ public class TestApplication {
         System.out.println("Iniciando Aplicação de Testes...");
         System.out.println();
 
-        System.out.print("Por favor, indique seu Identificador UCSAP: ");
         try {
-            entityUCSAPId = sc.nextShort();
-            sc.nextLine(); // Limpa o buffer
+            System.out.print("Por favor, indique seu Identificador UCSAP: ");
+            entityUCSAPId = Short.parseShort(sc.nextLine());
 
             System.out.print("Por favor, indique sua Porta: ");
-            entityPort = sc.nextShort();
-            sc.nextLine(); // Limpa o buffer
-        } catch (InputMismatchException ime) {
+            entityPort = Short.parseShort(sc.nextLine());
+        } catch (NumberFormatException nfe) {
             System.err.println(
                 "Valor deve ser um número natural e menor que 65536"
             );
@@ -73,7 +71,7 @@ public class TestApplication {
             );
         } catch (IllegalArgumentException iae) {
             System.err.println(
-                "Erro : Conjunto IP e Porta não foram encontrados no arquivo de configuração do Unicast"
+                "Erro : Conjunto UcsapID e Porta não foram encontrados no arquivo de configuração do Unicast"
             );
         } catch (FileNotFoundException fnfe) {
             System.err.println(
@@ -119,17 +117,14 @@ public class TestApplication {
                     );
 
                     try {
-                        destinationUCSAPId = sc.nextShort();
-                    } catch (InputMismatchException ime) {
-                        sc.nextLine(); // Limpa o buffer
+                        destinationUCSAPId = Short.parseShort(sc.nextLine());
+                    } catch (NumberFormatException ime) {
                         System.err.println(
                             "Valor do identificador deve ser um número natural"
                         );
                         continue;
                     }
-                    sc.nextLine(); // Limpa o buffer
                     System.out.println();
-
                     System.out.print("Digite a Mensagem a ser enviada: ");
 
                     destinationMessage = sc.nextLine();
