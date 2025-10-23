@@ -73,8 +73,7 @@ public class UnicastConfiguration {
                 );
             }
 
-            InetAddress address = null;
-            address = InetAddress.getByName(address_str);
+            InetAddress address = InetAddress.getByName(address_str);
 
             IPAddressAndPort address_and_port = new IPAddressAndPort(
                 address,
