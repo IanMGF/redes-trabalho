@@ -1,3 +1,7 @@
+import exceptions.InvalidFormatException;
+import java.io.FileNotFoundException;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
@@ -16,6 +20,7 @@ class NotificationReceiver implements UnicastServiceUserInterface {
      * @params ucsapId The message's sender UnicastProtocol Identifier number
      * @params notification A string containing the message sent
      */
+    @Override
     public void UPDataInd(short ucsapId, String notification) {
         System.out.println("Notificação Recebida de Identificador: " + ucsapId);
         System.out.println("Mensagem: " + notification);
@@ -36,7 +41,7 @@ public class TestApplication {
         boolean isRunning = true;
         short entityUCSAPId, entityPort, destinationUCSAPId;
         Scanner sc = new Scanner(System.in);
-        UnicastServiceInterface unicastProtocol;
+        UnicastServiceInterface unicastProtocol = null;
         String command, destinationMessage;
 
         System.out.println("Iniciando Aplicação de Testes...");
@@ -51,22 +56,49 @@ public class TestApplication {
             entityPort = sc.nextShort();
             sc.nextLine(); // Limpa o buffer
         } catch (InputMismatchException ime) {
-            System.err.println("Valor deve ser um número natural");
+            System.err.println(
+                "Valor deve ser um número natural e menor que 65536"
+            );
             sc.close();
             return;
         }
         System.out.println();
 
         // Instanciação do UnicastProtocol
-        unicastProtocol = new UnicastProtocol(
-            entityUCSAPId,
-            entityPort,
-            new NotificationReceiver()
-        );
+        try {
+            unicastProtocol = new UnicastProtocol(
+                entityUCSAPId,
+                entityPort,
+                new NotificationReceiver()
+            );
+        } catch (IllegalArgumentException iae) {
+            System.err.println(
+                "Erro : Conjunto IP e Porta não foram encontrados no arquivo de configuração do Unicast"
+            );
+        } catch (FileNotFoundException fnfe) {
+            System.err.println(
+                "Erro : Não foi encontrado arquivo de configuração do Unicast"
+            );
+        } catch (SocketException se) {
+            System.err.println(
+                "Erro : Não foi possível inicar socket na porta: " + entityPort
+            );
+        } catch (UnknownHostException uhe) {
+            System.err.println(
+                "Erro : Endereço IP: " +
+                    uhe +
+                    "contido no arquivo de configuração do Unicast é inválido"
+            );
+        } catch (InvalidFormatException ife) {
+            System.err.println(
+                "Erro: Linhas do arquivo de configuração Unicast não seguem o formato <ucsapid> <host> <porta>"
+            );
+        }
 
-        // Intanciação do thread receptor
-        Thread receiverThread = new Thread((Runnable) unicastProtocol);
-        receiverThread.start();
+        if (unicastProtocol == null) {
+            sc.close();
+            return;
+        }
 
         System.out.println("Aplicação de Testes Iniciada");
         System.out.println("Para enviar mensagens digite SEND");
@@ -124,10 +156,5 @@ public class TestApplication {
             }
         }
         sc.close();
-        try {
-            receiverThread.interrupt();
-        } catch (SecurityException se) {
-            System.err.println(se);
-        }
     }
 }
