@@ -6,26 +6,34 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+// TODO: Move thread start and kill logic to UnicastProtocol class
+
+/**
+ * @author Ian Marcos Gomes e Freitas
+ * @author João Roberto de Moraes Neto
+ *
+ *
+ */
 public class UnicastProtocol implements UnicastServiceInterface, Runnable {
     private static final String INITIAL_STRING = "UPDREQPDU";
     private static final Pattern PATTERN = Pattern.compile(INITIAL_STRING + " ([0-9]+) ((.|\n|\r)*)");
 
-    private short ucsap_id;
+    private short ucsapId;
     private short port;
 
     private DatagramSocket socket;
-    private final UnicastServiceUserInterface user_interface;
+    private final UnicastServiceUserInterface userInterface;
 
     private final UnicastConfiguration configuration;
 
-    UnicastProtocol(short ucsap_id, short port, UnicastServiceUserInterface user_interface) {
-        this.ucsap_id = ucsap_id;
+    UnicastProtocol(short ucsapId, short port, UnicastServiceUserInterface userInterface) {
+        this.ucsapId = ucsapId;
         this.port = port;
-        this.user_interface = user_interface;
+        this.userInterface = userInterface;
 
         this.configuration = UnicastConfiguration.LoadFromFile(new File("unicast.conf"));
-        IPAddressAndPort address_and_port = configuration.GetAddress(ucsap_id);
-        if (address_and_port.port != port) {
+        IPAddressAndPort ipAddressAndPort = configuration.GetAddress(ucsapId);
+        if (ipAddressAndPort.port != port) {
             throw new IllegalArgumentException("Self not found in configuration file");
         }
 
@@ -36,6 +44,13 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
         }
     }
 
+    /**
+     * Packs a string into the Unicast Protocol Data Unit format.
+     *
+     * @param data The data to be wrapped into a protocol data unit
+     * @return The string of bytes containing the data, wrapped in a protocol data unit
+     * @throws RuntimeException If the data sent has over 1009 bytes, which would result in a PDU longer than 1024 bytes
+     */
     private String PackData(String data) {
         int size = data.getBytes().length;
 
@@ -52,42 +67,44 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
         return pdu;
     }
 
-    private String UnpackData(String protocol_data_unit) {
-        Matcher matcher = PATTERN.matcher(protocol_data_unit);
+
+    /**
+     * Unpacks a string in Protocol Data Unit format back into it's original data
+     *
+     * @param protocolDataUnit The string, in the format of the protocol data unit, to unpack
+     * @return The original unpacked data
+     * @throws RuntimeException If the string passed does NOT follow the format of the PDU
+     */
+    private String UnpackData(String protocolDataUnit) throws RuntimeException {
+        Matcher matcher = PATTERN.matcher(protocolDataUnit);
         if (!matcher.matches()) {
-            throw new RuntimeException("Error trying to unpack Unicast Data Unit:\n\"%s\"".formatted(protocol_data_unit));
+            throw new RuntimeException("Error trying to unpack Unicast Data Unit:\n\"%s\"".formatted(protocolDataUnit));
         }
-        String size_str = matcher.group(1);
-        String unpacked_data = matcher.group(2);
-        byte[] unpacked_bytes = unpacked_data.getBytes(StandardCharsets.UTF_8);
-        int size = Integer.parseInt(size_str);
+        String sizeStr = matcher.group(1);
+        String unpackedData = matcher.group(2);
+        byte[] unpackedBytes = unpackedData.getBytes(StandardCharsets.UTF_8);
+        int size = Integer.parseInt(sizeStr);
 
-        if (unpacked_bytes.length > size) {
-            unpacked_bytes = Arrays.copyOfRange(unpacked_bytes, 0, size);
-        } else if (unpacked_bytes.length < size) {
-            // Pad the result
-            unpacked_bytes = Arrays.copyOf(unpacked_bytes, size);
-        }
+        // Adjust size
+        byte[] adjustedBytes = Arrays.copyOf(unpackedBytes, size);
 
-        unpacked_data = new String(unpacked_bytes, StandardCharsets.UTF_8);
+        return new String(adjustedBytes, StandardCharsets.UTF_8);
 
-        return unpacked_data;
     }
 
     @Override
     public boolean UPDataReq(short id, String data) {
-        InetAddress address;
-        String packed_data = PackData(data);
-        int size = packed_data.getBytes(StandardCharsets.UTF_8).length;
+        String packedData = PackData(data);
+        int size = packedData.getBytes(StandardCharsets.UTF_8).length;
 
-        IPAddressAndPort address_and_port = configuration.GetAddress(id);
+        IPAddressAndPort ipAddressAndPort = configuration.GetAddress(id);
 
-        if (address_and_port == null) {
+        if (ipAddressAndPort == null) {
             return false;
         }
 
-        byte[] data_bytes = packed_data.getBytes();
-        DatagramPacket packet = new DatagramPacket(data_bytes, size, address_and_port.address, address_and_port.port);
+        byte[] dataBytes = packedData.getBytes();
+        DatagramPacket packet = new DatagramPacket(dataBytes, size, ipAddressAndPort.address, ipAddressAndPort.port);
         try {
             socket.send(packet);
         } catch (IOException e) {
@@ -100,14 +117,15 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
     @Override
     public void run() {
         DatagramPacket packet;
+        boolean running = true;
 
-        while (true) {
+        while (running) {
             if(Thread.currentThread().isInterrupted()) {
-                break;
+                running = false;
             }
 
-            byte[] recv_buffer = new byte[1024];
-            packet = new DatagramPacket(recv_buffer, 1024);
+            byte[] receiveBuffer = new byte[1024];
+            packet = new DatagramPacket(receiveBuffer, 1024);
             try {
                 socket.receive(packet);
             } catch (IOException e) {
@@ -115,16 +133,16 @@ public class UnicastProtocol implements UnicastServiceInterface, Runnable {
             }
 
             byte[] data = packet.getData();
-            String data_str = new String(data, StandardCharsets.UTF_8);
+            String dataStr = new String(data, StandardCharsets.UTF_8);
             String unpacked;
-            unpacked = UnpackData(data_str);
+            unpacked = UnpackData(dataStr);
 
-            InetAddress sender_address = packet.getAddress();
-            short sender_port = (short) packet.getPort();
+            InetAddress senderAddress = packet.getAddress();
+            short senderPort = (short) packet.getPort();
 
-            short ucsap_id = configuration.GetId(new IPAddressAndPort(sender_address, sender_port));
+            short ucsapId = configuration.GetId(new IPAddressAndPort(senderAddress, senderPort));
 
-            user_interface.UPDataInd(ucsap_id, unpacked);
+            userInterface.UPDataInd(ucsapId, unpacked);
         }
     }
 }

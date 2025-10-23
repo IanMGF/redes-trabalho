@@ -1,5 +1,11 @@
 import java.net.InetAddress;
 
+/**
+ * @author Ian Marcos Gomes e Freitas
+ * @author João Roberto de Moraes Neto
+ *
+ *
+ */
 public class IPAddressAndPort {
     public InetAddress address;
     public Short port;
@@ -15,10 +21,10 @@ public class IPAddressAndPort {
             return true;
         }
 
-        if (!(other instanceof IPAddressAndPort other_addr)) {
+        if (!(other instanceof IPAddressAndPort otherAddress)) {
             return false;
         }
 
-        return address.equals(other_addr.address) && port.equals(other_addr.port);
+        return address.equals(otherAddress.address) && port.equals(otherAddress.port);
     }
 }

@@ -5,15 +5,19 @@ import java.io.FileReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-
+/**
+ * @author Ian Marcos Gomes e Freitas
+ * @author João Roberto de Moraes Neto
+ *
+ *
+ */
 public class UnicastConfiguration {
     private static final Pattern PATTERN = Pattern.compile("([0-9]+) ([a-zA-Z0-9.]+) ([0-9]+)");
-    private final HashMap<Short, IPAddressAndPort> configuration_map = new HashMap<>();
+    private final HashMap<Short, IPAddressAndPort> configurationMap = new HashMap<>();
 
     public static UnicastConfiguration LoadFromFile(File file) {
         UnicastConfiguration configuration = new UnicastConfiguration();
@@ -32,7 +36,7 @@ public class UnicastConfiguration {
                 throw new RuntimeException("Line does not follow format of <id> <host> <port>:\n\"%s\"".formatted(line));
             }
 
-            short ucsap_id = (short) Integer.parseInt(matcher.group(1));
+            short ucsapId = (short) Integer.parseInt(matcher.group(1));
             String address_str = matcher.group(2);
             short port = (short) Integer.parseInt(matcher.group(3));
 
@@ -48,17 +52,17 @@ public class UnicastConfiguration {
             }
             IPAddressAndPort address_and_port = new IPAddressAndPort(address, port);
 
-            configuration.configuration_map.put(ucsap_id, address_and_port);
+            configuration.configurationMap.put(ucsapId, address_and_port);
         }
 
         return configuration;
     }
 
-    public IPAddressAndPort GetAddress(short ucsap_id) {
-        return configuration_map.get(ucsap_id);
+    public IPAddressAndPort GetAddress(short ucsapId) {
+        return configurationMap.get(ucsapId);
     }
     public short GetId(IPAddressAndPort address_and_port) {
-        return configuration_map.entrySet().stream()
+        return configurationMap.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(address_and_port))
                 .findFirst()
                 .orElseThrow()
