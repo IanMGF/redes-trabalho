@@ -1,3 +1,4 @@
+import exceptions.DataSizeException;
 import exceptions.InvalidFormatException;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -67,15 +68,15 @@ public class UnicastProtocol implements UnicastServiceInterface {
      *
      * @param data The data to be wrapped into a protocol data unit
      * @return The string of bytes containing the data, wrapped in a protocol data unit
-     * @throws RuntimeException If the data sent has over 1009 bytes, which would result in a PDU longer than 1024 bytes
+     * @throws DataSizeException If the data sent has over 1009 bytes, which would result in a PDU longer than 1024 bytes
      */
-    static String PackData(String data) {
+    static String PackData(String data) throws DataSizeException {
         int size = data.getBytes().length;
 
         String pdu = INITIAL_STRING + " " + size + " " + data;
 
         if (pdu.getBytes(StandardCharsets.UTF_8).length > 1024) {
-            throw new RuntimeException("Data too long");
+            throw new DataSizeException("Data too long");
         }
 
         return pdu;
@@ -111,7 +112,12 @@ public class UnicastProtocol implements UnicastServiceInterface {
 
     @Override
     public boolean UPDataReq(short id, String data) {
-        String packedData = PackData(data);
+        String packedData;
+        try {
+            packedData = PackData(data);
+        } catch (DataSizeException dse) {
+            return false;
+        }
         int size = packedData.getBytes(StandardCharsets.UTF_8).length;
 
         IPAddressAndPort ipAddressAndPort = configuration.GetAddress(id);
