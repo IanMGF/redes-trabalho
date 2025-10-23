@@ -25,7 +25,14 @@ public class UnicastProtocol implements UnicastServiceInterface {
 
     private final UnicastConfiguration configuration;
 
-    UnicastProtocol(short ucsapId, short port, UnicastServiceUserInterface userInterface) throws IllegalArgumentException, IOException {
+    /**
+     * @param ucsapId Unicast service ID, defined in the `unicast.conf` file
+     * @param port Port at which the protocol will start
+     * @param userInterface Service user interface. It's `UPDataInd` method will be called whenever a new message is received
+     * @throws IllegalArgumentException Exception thrown if the port passed to the initializer does not match the one found in `unicast.conf`
+     * @throws IOException Exception thrown if the file failed to close
+     */
+    UnicastProtocol(short ucsapId, short port, UnicastServiceUserInterface userInterface) throws IllegalArgumentException, IOException, InvalidFormatException {
         this.ucsapId = ucsapId;
 
         this.configuration = UnicastConfiguration.LoadFromFile(new File("unicast.conf"));
@@ -110,10 +117,6 @@ public class UnicastProtocol implements UnicastServiceInterface {
         return true;
     }
 
-    /**
-     * @author Ian Marcos Gomes e Freitas
-     * Stops the listener thread
-     */
     public void stop() {
         listenerThread.interrupt();
         listener.stop();
