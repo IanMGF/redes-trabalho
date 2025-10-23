@@ -20,7 +20,6 @@ public class UnicastProtocol implements UnicastServiceInterface {
     private final short ucsapId;
 
     private final DatagramSocket socket;
-    private final Thread listenerThread;
     private final UnicastListener listener;
 
     private final UnicastConfiguration configuration;
@@ -44,7 +43,9 @@ public class UnicastProtocol implements UnicastServiceInterface {
         socket = new DatagramSocket(port);
 
         listener = new UnicastListener(socket, userInterface, configuration);
-        listenerThread = new Thread(listener);
+        Thread listenerThread = new Thread(listener);
+
+        listenerThread.start();
     }
 
     /**
@@ -118,7 +119,6 @@ public class UnicastProtocol implements UnicastServiceInterface {
     }
 
     public void stop() {
-        listenerThread.interrupt();
         listener.stop();
     }
 
@@ -175,6 +175,9 @@ class UnicastListener implements Runnable {
         }
     }
 
+    /**
+     * Properly stop the listener
+     */
     public void stop() {
         socket.close();
         running = false;
