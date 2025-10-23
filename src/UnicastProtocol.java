@@ -1,6 +1,6 @@
 import exceptions.InvalidFormatException;
-
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -8,14 +8,16 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 /**
  * @author Ian Marcos Gomes e Freitas
  * @author João Roberto de Moraes Neto
  */
 public class UnicastProtocol implements UnicastServiceInterface {
+
     private static final String INITIAL_STRING = "UPDREQPDU";
-    private static final Pattern PATTERN = Pattern.compile(INITIAL_STRING + " ([0-9]+) ((.|\n|\r)*)");
+    private static final Pattern PATTERN = Pattern.compile(
+        INITIAL_STRING + " ([0-9]+) ((.|\n|\r)*)"
+    );
 
     private final short ucsapId;
 
@@ -31,13 +33,22 @@ public class UnicastProtocol implements UnicastServiceInterface {
      * @throws IllegalArgumentException Exception thrown if the port passed to the initializer does not match the one found in `unicast.conf`
      * @throws IOException Exception thrown if the file failed to close
      */
-    UnicastProtocol(short ucsapId, short port, UnicastServiceUserInterface userInterface) throws IllegalArgumentException, IOException, InvalidFormatException {
+    UnicastProtocol(
+        short ucsapId,
+        short port,
+        UnicastServiceUserInterface userInterface
+    )
+        throws IllegalArgumentException, FileNotFoundException, UnknownHostException, SocketException, InvalidFormatException {
         this.ucsapId = ucsapId;
 
-        this.configuration = UnicastConfiguration.LoadFromFile(new File("unicast.conf"));
+        this.configuration = UnicastConfiguration.LoadFromFile(
+            new File("unicast.conf")
+        );
         IPAddressAndPort ipAddressAndPort = configuration.GetAddress(ucsapId);
         if (ipAddressAndPort.port != port) {
-            throw new IllegalArgumentException("Self not found in configuration file");
+            throw new IllegalArgumentException(
+                "Self not found in configuration file"
+            );
         }
 
         socket = new DatagramSocket(port);
@@ -58,11 +69,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
     static String PackData(String data) {
         int size = data.getBytes().length;
 
-        String pdu = INITIAL_STRING +
-                " " +
-                size +
-                " " +
-                data;
+        String pdu = INITIAL_STRING + " " + size + " " + data;
 
         if (pdu.getBytes(StandardCharsets.UTF_8).length > 1024) {
             throw new RuntimeException("Data too long");
@@ -71,7 +78,6 @@ public class UnicastProtocol implements UnicastServiceInterface {
         return pdu;
     }
 
-
     /**
      * Unpacks a string in Protocol Data Unit format back into it's original data
      *
@@ -79,10 +85,15 @@ public class UnicastProtocol implements UnicastServiceInterface {
      * @return The original unpacked data
      * @throws RuntimeException If the string passed does NOT follow the format of the PDU
      */
-    static String UnpackData(String protocolDataUnit) throws InvalidFormatException {
+    static String UnpackData(String protocolDataUnit)
+        throws InvalidFormatException {
         Matcher matcher = PATTERN.matcher(protocolDataUnit);
         if (!matcher.matches()) {
-            throw new InvalidFormatException("Error trying to unpack Unicast Data Unit:\n\"%s\"".formatted(protocolDataUnit));
+            throw new InvalidFormatException(
+                "Error trying to unpack Unicast Data Unit:\n\"%s\"".formatted(
+                    protocolDataUnit
+                )
+            );
         }
         String sizeStr = matcher.group(1);
         String unpackedData = matcher.group(2);
@@ -93,7 +104,6 @@ public class UnicastProtocol implements UnicastServiceInterface {
         byte[] adjustedBytes = Arrays.copyOf(unpackedBytes, size);
 
         return new String(adjustedBytes, StandardCharsets.UTF_8);
-
     }
 
     @Override
@@ -108,7 +118,12 @@ public class UnicastProtocol implements UnicastServiceInterface {
         }
 
         byte[] dataBytes = packedData.getBytes();
-        DatagramPacket packet = new DatagramPacket(dataBytes, size, ipAddressAndPort.address, ipAddressAndPort.port);
+        DatagramPacket packet = new DatagramPacket(
+            dataBytes,
+            size,
+            ipAddressAndPort.address,
+            ipAddressAndPort.port
+        );
         try {
             socket.send(packet);
         } catch (IOException e) {
@@ -128,12 +143,17 @@ public class UnicastProtocol implements UnicastServiceInterface {
 }
 
 class UnicastListener implements Runnable {
+
     private final DatagramSocket socket;
     private final UnicastServiceUserInterface userInterface;
     private final UnicastConfiguration configuration;
     private boolean running;
 
-    UnicastListener(DatagramSocket socket, UnicastServiceUserInterface userInterface, UnicastConfiguration configuration) {
+    UnicastListener(
+        DatagramSocket socket,
+        UnicastServiceUserInterface userInterface,
+        UnicastConfiguration configuration
+    ) {
         this.socket = socket;
         this.userInterface = userInterface;
         this.configuration = configuration;
@@ -145,7 +165,7 @@ class UnicastListener implements Runnable {
         DatagramPacket packet;
 
         while (running) {
-            if(Thread.currentThread().isInterrupted()) {
+            if (Thread.currentThread().isInterrupted()) {
                 running = false;
             }
 
@@ -169,7 +189,9 @@ class UnicastListener implements Runnable {
             InetAddress senderAddress = packet.getAddress();
             short senderPort = (short) packet.getPort();
 
-            short ucsapId = configuration.GetId(new IPAddressAndPort(senderAddress, senderPort));
+            short ucsapId = configuration.GetId(
+                new IPAddressAndPort(senderAddress, senderPort)
+            );
 
             userInterface.UPDataInd(ucsapId, unpacked);
         }
