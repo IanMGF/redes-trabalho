@@ -25,7 +25,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
 
     private final UnicastConfiguration configuration;
 
-    UnicastProtocol(short ucsapId, short port, UnicastServiceUserInterface userInterface) {
+    UnicastProtocol(short ucsapId, short port, UnicastServiceUserInterface userInterface) throws IllegalArgumentException, IOException {
         this.ucsapId = ucsapId;
 
         this.configuration = UnicastConfiguration.LoadFromFile(new File("unicast.conf"));
