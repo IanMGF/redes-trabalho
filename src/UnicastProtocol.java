@@ -163,7 +163,7 @@ class UnicastListener implements Runnable {
             try {
                 unpacked = UnicastProtocol.UnpackData(dataStr);
             } catch (InvalidFormatException e) {
-                throw new RuntimeException(e);
+                continue;
             }
 
             InetAddress senderAddress = packet.getAddress();
