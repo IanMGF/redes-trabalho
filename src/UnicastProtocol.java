@@ -1,3 +1,4 @@
+import exceptions.DataSizeException;
 import exceptions.InvalidFormatException;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,8 +31,11 @@ public class UnicastProtocol implements UnicastServiceInterface {
      * @param ucsapId Unicast service ID, defined in the `unicast.conf` file
      * @param port Port at which the protocol will start
      * @param userInterface Service user interface. It's `UPDataInd` method will be called whenever a new message is received
-     * @throws IllegalArgumentException Exception thrown if the port passed to the initializer does not match the one found in `unicast.conf`
-     * @throws IOException Exception thrown if the file failed to close
+     * @throws IllegalArgumentException If the port passed to the initializer does not match the one found in `unicast.conf`
+     * @throws FileNotFoundException If `unicast.conf` was not found
+     * @throws UnknownHostException If a host within `unicast.conf`could not be found
+     * @throws InvalidFormatException If `unicast.conf` is not properly formatted
+     * @throws SocketException If the socket could not be opened or bound
      */
     UnicastProtocol(
         short ucsapId,
@@ -64,15 +68,15 @@ public class UnicastProtocol implements UnicastServiceInterface {
      *
      * @param data The data to be wrapped into a protocol data unit
      * @return The string of bytes containing the data, wrapped in a protocol data unit
-     * @throws RuntimeException If the data sent has over 1009 bytes, which would result in a PDU longer than 1024 bytes
+     * @throws DataSizeException If the data sent has over 1009 bytes, which would result in a PDU longer than 1024 bytes
      */
-    static String PackData(String data) {
+    static String PackData(String data) throws DataSizeException {
         int size = data.getBytes().length;
 
         String pdu = INITIAL_STRING + " " + size + " " + data;
 
         if (pdu.getBytes(StandardCharsets.UTF_8).length > 1024) {
-            throw new RuntimeException("Data too long");
+            throw new DataSizeException("Data too long");
         }
 
         return pdu;
@@ -108,7 +112,12 @@ public class UnicastProtocol implements UnicastServiceInterface {
 
     @Override
     public boolean UPDataReq(short id, String data) {
-        String packedData = PackData(data);
+        String packedData;
+        try {
+            packedData = PackData(data);
+        } catch (DataSizeException dse) {
+            return false;
+        }
         int size = packedData.getBytes(StandardCharsets.UTF_8).length;
 
         IPAddressAndPort ipAddressAndPort = configuration.GetAddress(id);
@@ -183,7 +192,7 @@ class UnicastListener implements Runnable {
             try {
                 unpacked = UnicastProtocol.UnpackData(dataStr);
             } catch (InvalidFormatException e) {
-                throw new RuntimeException(e);
+                continue;
             }
 
             InetAddress senderAddress = packet.getAddress();
