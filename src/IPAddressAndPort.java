@@ -7,6 +7,7 @@ import java.net.InetAddress;
  *
  */
 public class IPAddressAndPort {
+
     public InetAddress address;
     public Short port;
 
@@ -15,16 +16,24 @@ public class IPAddressAndPort {
         this.port = port;
     }
 
+    /**
+     * Checks equality between two instances of the IPAddressAndPort class
+     *
+     * @param other The instance which is going to be compared to the instance that is executing the method.
+     * @return The boolean that represents the result of the equality check
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
 
-        if (!(other instanceof IPAddressAndPort otherAddress)) {
+        if (!(other instanceof IPAddressAndPort other_addr)) {
             return false;
         }
 
-        return address.equals(otherAddress.address) && port.equals(otherAddress.port);
+        return (
+            address.equals(other_addr.address) && port.equals(other_addr.port)
+        );
     }
 }

@@ -9,6 +9,13 @@ import java.util.Scanner;
  */
 class NotificationReceiver implements UnicastServiceUserInterface {
 
+    /**
+     * Notifies the user when a message was received from UnicastProtocol
+     * by printing it on the screen.
+     *
+     * @params ucsapId The message's sender UnicastProtocol Identifier number
+     * @params notification A string containing the message sent
+     */
     public void UPDataInd(short ucsapId, String notification) {
         System.out.println("Notificação Recebida de Identificador: " + ucsapId);
         System.out.println("Mensagem: " + notification);
