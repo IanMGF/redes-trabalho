@@ -39,7 +39,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
      */
     UnicastProtocol(
         short ucsapId,
-        short port,
+        int port,
         UnicastServiceUserInterface userInterface
     )
         throws IllegalArgumentException, FileNotFoundException, UnknownHostException, SocketException, InvalidFormatException {
@@ -96,7 +96,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
             throw new InvalidFormatException(
                 "Error trying to unpack Unicast Data Unit:\n\"%s\"".formatted(
                     protocolDataUnit
-                )
+                ), protocolDataUnit
             );
         }
         String sizeStr = matcher.group(1);

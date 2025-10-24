@@ -54,7 +54,7 @@ public class UnicastConfiguration {
                 throw new InvalidFormatException(
                     "Line does not follow format of <id> <host> <port>:\n\"%s\"".formatted(
                         line
-                    )
+                    ), line
                 );
             }
 

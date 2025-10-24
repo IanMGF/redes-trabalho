@@ -9,9 +9,9 @@ import java.net.InetAddress;
 public class IPAddressAndPort {
 
     public InetAddress address;
-    public Short port;
+    public Integer port;
 
-    IPAddressAndPort(InetAddress address, short port) {
+    IPAddressAndPort(InetAddress address, int port) {
         this.address = address;
         this.port = port;
     }
