@@ -1,3 +1,5 @@
+package up;
+
 import java.net.InetAddress;
 
 /**
@@ -17,7 +19,7 @@ public class IPAddressAndPort {
     }
 
     /**
-     * Checks equality between two instances of the IPAddressAndPort class
+     * Checks equality between two instances of the unicast.IPAddressAndPort class
      *
      * @param other The instance which is going to be compared to the instance that is executing the method.
      * @return The boolean that represents the result of the equality check

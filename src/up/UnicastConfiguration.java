@@ -1,3 +1,5 @@
+package up;
+
 import exceptions.InvalidFormatException;
 import exceptions.InvalidPortException;
 
@@ -60,9 +62,9 @@ public class UnicastConfiguration {
 
             short ucsapId = (short) Integer.parseInt(matcher.group(1));
             String address_str = matcher.group(2);
-            short port = (short) Integer.parseInt(matcher.group(3));
+            int port = Integer.parseInt(matcher.group(3));
 
-            if (port <= 1024) {
+            if (port <= 1024 || port >= 65536) {
                 try {
                     reader.close();
                 } catch (IOException e) {

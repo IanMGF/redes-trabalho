@@ -1,8 +1,11 @@
 import exceptions.InvalidFormatException;
+import exceptions.InvalidPortException;
+import up.UnicastProtocol;
+import up.UnicastServiceInterface;
+
 import java.io.FileNotFoundException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.InputMismatchException;
 import java.util.Scanner;
 
 /**
@@ -11,31 +14,7 @@ import java.util.Scanner;
  *
  *
  */
-class NotificationReceiver implements UnicastServiceUserInterface {
-
-    /**
-     * Notifies the user when a message was received from UnicastProtocol
-     * by printing it on the screen.
-     *
-     * @param ucsapId The message's sender UnicastProtocol Identifier number
-     * @param notification A string containing the message sent
-     */
-    @Override
-    public void UPDataInd(short ucsapId, String notification) {
-        System.out.println("Notificação Recebida de Identificador: " + ucsapId);
-        System.out.println("Mensagem: " + notification);
-        System.out.println();
-    }
-}
-
-/**
- * @author Ian Marcos Gomes e Freitas
- * @author João Roberto de Moraes Neto
- *
- *
- */
 public class TestApplication {
-
     public static void main(String[] args) {
         // Declaração das variáveis
         boolean isRunning = true;
@@ -52,12 +31,12 @@ public class TestApplication {
             System.out.print("Por favor, indique seu Identificador UCSAP: ");
             entityUCSAPId = Short.parseShort(sc.nextLine());
             if (entityUCSAPId < 0) {
-                System.err.println("Valor deve ser um número natural");
+                System.err.println("Valor deve ser um número natural e menor que 32768");
                 sc.close();
                 return;
             }
         } catch (NumberFormatException nfe) {
-            System.err.println("Valor deve ser um número natural menor que 32768");
+            System.err.println("Valor deve ser um número natural e menor que 32768");
             sc.close();
             return;
         }
@@ -76,27 +55,22 @@ public class TestApplication {
         }
         System.out.println();
 
-        // Instanciação do UnicastProtocol
+        // Instanciação do unicast.UnicastProtocol
+        TestMessageReceiver messageReceiver = new TestMessageReceiver();
         try {
-            unicastProtocol = new UnicastProtocol(
-                entityUCSAPId,
-                entityPort,
-                new NotificationReceiver()
-            );
+            unicastProtocol = new UnicastProtocol(entityUCSAPId, entityPort, messageReceiver);
         } catch (IllegalArgumentException iae) {
-            System.err.println(
-                "Erro : Conjunto UcsapID e Porta não foram encontrados no arquivo de configuração do Unicast"
-            );
+            System.err.println("Erro : Conjunto ID e Porta não foram encontrados no arquivo de configuração do Unicast");
         } catch (FileNotFoundException fnfe) {
-            System.err.println(
-                "Erro : Não foi encontrado arquivo de configuração do Unicast ('unicast.conf')"
-            );
+            System.err.println("Erro : Não foi encontrado arquivo de configuração do Unicast ('unicast.conf')");
         } catch (SocketException se) {
             System.err.printf("Erro : Não foi possível inicar atrelar socket à porta %s\n", entityPort);
         } catch (UnknownHostException uhe) {
             System.err.printf("Erro : Endereço IP: '%s' contido no arquivo de configuração do Unicast é inválido\n", uhe);
         } catch (InvalidFormatException ife) {
             System.err.printf("Erro: Linha do arquivo de configuração Unicast não seguem o formato <ucsapid> <host> <porta>: '%s'\n", ife.getText());
+        } catch (InvalidPortException ipe) {
+            System.err.printf("Erro: Porta inválida encontrada no arquivo de configuração: %s. Portas válidas: 1025-65535\n", ipe.getPort());
         }
 
         if (unicastProtocol == null) {
@@ -105,11 +79,13 @@ public class TestApplication {
         }
 
         System.out.println("Aplicação de Testes Iniciada");
+        System.out.println("Mensagens recebidas serão apresentadas\n");
+
         System.out.println("Para enviar mensagens digite SEND");
-        System.out.println("Para sair digite EXIT");
+        System.out.println("Para sair digite EXIT\n");
+
 
         while (isRunning) {
-            System.out.println("Esperando por notificações...\n");
 
             command = sc.nextLine().toUpperCase();
             switch (command) {
@@ -118,12 +94,11 @@ public class TestApplication {
                     isRunning = false;
                     break;
                 case "SEND":
-                    System.out.print(
-                        "Digite o Identificador UCSAP de destino: "
-                    );
+                    System.out.print("Digite o Identificador UCSAP de destino: ");
 
                     try {
-                        destinationUCSAPId = Short.parseShort(sc.nextLine());
+                        String line = sc.nextLine();
+                        destinationUCSAPId = Short.parseShort(line);
                         if(destinationUCSAPId < 0) {
                             System.err.println("Valor do identificador deve ser um número natural");
                             continue;
@@ -132,7 +107,6 @@ public class TestApplication {
                         System.err.println("Valor do identificador deve ser um número natural");
                         continue;
                     }
-                    System.out.println();
                     System.out.print("Digite a Mensagem a ser enviada: ");
 
                     destinationMessage = sc.nextLine();
@@ -155,5 +129,7 @@ public class TestApplication {
             }
         }
         sc.close();
+        UnicastProtocol protocol = (UnicastProtocol) unicastProtocol;
+        protocol.stop();
     }
 }
