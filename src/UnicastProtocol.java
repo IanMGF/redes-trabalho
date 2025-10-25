@@ -15,12 +15,10 @@ import java.util.regex.Pattern;
  */
 public class UnicastProtocol implements UnicastServiceInterface {
 
-    private static final String INITIAL_STRING = "UPDREQPDU";
-    private static final Pattern PATTERN = Pattern.compile(
-        INITIAL_STRING + " ([0-9]+) ((.|\n|\r)*)"
-    );
+    private static final String PDU_PREFIX = "UPDREQPDU";
+    private static final Pattern PATTERN = Pattern.compile(PDU_PREFIX + " ([0-9]+) ((.|\n|\r)*)");
 
-    private final short ucsapId;
+    private final short UCSApId;
 
     private final DatagramSocket socket;
     private final UnicastListener listener;
@@ -28,7 +26,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
     private final UnicastConfiguration configuration;
 
     /**
-     * @param ucsapId Unicast service ID, defined in the `unicast.conf` file
+     * @param UCSApId Unicast service ID, defined in the `unicast.conf` file
      * @param port Port at which the protocol will start
      * @param userInterface Service user interface. It's `UPDataInd` method will be called whenever a new message is received
      * @throws IllegalArgumentException If the port passed to the initializer does not match the one found in `unicast.conf`
@@ -38,17 +36,17 @@ public class UnicastProtocol implements UnicastServiceInterface {
      * @throws SocketException If the socket could not be opened or bound
      */
     UnicastProtocol(
-        short ucsapId,
+        short UCSApId,
         int port,
         UnicastServiceUserInterface userInterface
     )
         throws IllegalArgumentException, FileNotFoundException, UnknownHostException, SocketException, InvalidFormatException {
-        this.ucsapId = ucsapId;
+        this.UCSApId = UCSApId;
 
         this.configuration = UnicastConfiguration.LoadFromFile(
             new File("unicast.conf")
         );
-        IPAddressAndPort ipAddressAndPort = configuration.GetAddress(ucsapId);
+        IPAddressAndPort ipAddressAndPort = configuration.GetAddress(UCSApId);
         if (ipAddressAndPort == null || ipAddressAndPort.port != port) {
             throw new IllegalArgumentException(
                 "Self not found in configuration file"
@@ -73,7 +71,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
     static String PackData(String data) throws DataSizeException {
         int size = data.getBytes().length;
 
-        String pdu = INITIAL_STRING + " " + size + " " + data;
+        String pdu = PDU_PREFIX + " " + size + " " + data;
 
         if (pdu.getBytes(StandardCharsets.UTF_8).length > 1024) {
             throw new DataSizeException("Data too long");
@@ -147,7 +145,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
     }
 
     public short getId() {
-        return ucsapId;
+        return UCSApId;
     }
 }
 
@@ -198,11 +196,11 @@ class UnicastListener implements Runnable {
             InetAddress senderAddress = packet.getAddress();
             short senderPort = (short) packet.getPort();
 
-            short ucsapId = configuration.GetId(
+            short UCSApId = configuration.GetId(
                 new IPAddressAndPort(senderAddress, senderPort)
             );
 
-            userInterface.UPDataInd(ucsapId, unpacked);
+            userInterface.UPDataInd(UCSApId, unpacked);
         }
     }
 
