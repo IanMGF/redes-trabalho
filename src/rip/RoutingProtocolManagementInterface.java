@@ -1,0 +1,7 @@
+package rip;
+
+public interface RoutingProtocolManagementInterface {
+    boolean getDistanceTable(short Nodeid);
+    boolean getLinkCost(short firstNodeId, short secondNodeId);
+    boolean setLinkCost(short firstNodeId, short secondNodeId, int newLinkCost);
+}
