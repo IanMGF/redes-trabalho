@@ -1,6 +1,6 @@
 package rip;
 
-public enum RoutinInformationProtocolOperation {
+public enum RoutingInformationProtocolOperation {
     RIPGET,
     RIPSET,
     RIPNTF,

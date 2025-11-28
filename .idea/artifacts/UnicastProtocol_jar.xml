@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="UnicastProtocol:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/UnicastProtocol_jar</output-path>
+    <root id="archive" name="UnicastProtocol.jar">
+      <element id="module-output" name="UnicastProtocol" />
+    </root>
+  </artifact>
+</component>
