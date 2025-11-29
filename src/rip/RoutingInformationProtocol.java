@@ -32,7 +32,7 @@ public class RoutingInformationProtocol
 
         unicastInterface.UPDataReq(
             nodeId,
-            RoutinInformationProtocolOperation.RIPRQT.name()
+            RoutingInformationProtocolOperation.RIPRQT.name()
         );
 
         return true;
@@ -45,7 +45,7 @@ public class RoutingInformationProtocol
         }
 
         String packedData =
-            RoutinInformationProtocolOperation.RIPGET.name() +
+            RoutingInformationProtocolOperation.RIPGET.name() +
             " " +
             firstNodeId +
             " " +
@@ -70,7 +70,7 @@ public class RoutingInformationProtocol
         }
 
         String packedData =
-            RoutinInformationProtocolOperation.RIPSET.name() +
+            RoutingInformationProtocolOperation.RIPSET.name() +
             " " +
             firstNodeId +
             " " +
