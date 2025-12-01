@@ -1,4 +1,4 @@
-package rip;
+package rip.manager;
 
 public class RoutingManagementApplication
     implements RoutingProtocolManagementServiceUserInterface {

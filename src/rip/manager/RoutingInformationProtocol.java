@@ -1,8 +1,16 @@
 package rip.manager;
 
-import rip.RoutingInformationProtocolOperation;
+import exceptions.InvalidFormatException;
+import exceptions.InvalidPortException;
+import rip.operations.RoutingInformationProtocolOperation;
+import rip.operations.RoutingInformationProtocolOperationType;
+import up.UnicastProtocol;
 import up.UnicastServiceInterface;
 import up.UnicastServiceUserInterface;
+
+import java.io.FileNotFoundException;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 /**
  * @author Ian Marcos Gomes e Freitas
@@ -10,18 +18,32 @@ import up.UnicastServiceUserInterface;
  *
  *
  */
-
 public class RoutingInformationProtocol
     implements UnicastServiceUserInterface, RoutingProtocolManagementInterface {
-
+    private final short UCSAPID = 0;
+    private final int PORT = 520;
     private UnicastServiceInterface unicastInterface;
     private RoutingProtocolManagementServiceUserInterface ripServiceUserInterface;
 
     public RoutingInformationProtocol(
-        UnicastServiceInterface unicastInterface,
         RoutingProtocolManagementServiceUserInterface ripServiceUserInterface
     ) {
-        this.unicastInterface = unicastInterface;
+        try {
+            UnicastServiceInterface unicastInterface = new UnicastProtocol(UCSAPID, PORT, this);
+        } catch (IllegalArgumentException iae) {
+            System.err.println("Erro : Conjunto ID e Porta não foram encontrados no arquivo de configuração do Unicast");
+        } catch (FileNotFoundException fnfe) {
+            System.err.println("Erro : Não foi encontrado arquivo de configuração do Unicast ('unicast.conf')");
+        } catch (SocketException se) {
+            System.err.printf("Erro : Não foi possível inicar atrelar socket à porta %s\n", PORT);
+        } catch (UnknownHostException uhe) {
+            System.err.printf("Erro : Endereço IP: '%s' contido no arquivo de configuração do Unicast é inválido\n", uhe);
+        } catch (InvalidFormatException ife) {
+            System.err.printf("Erro: Linha do arquivo de configuração Unicast não seguem o formato <ucsapid> <host> <porta>: '%s'\n", ife.getText());
+        } catch (InvalidPortException ipe) {
+            System.err.printf("Erro: Porta inválida encontrada no arquivo de configuração: %s. Portas válidas: 1025-65535\n", ipe.getPort());
+        }
+
         this.ripServiceUserInterface = ripServiceUserInterface;
     }
 
@@ -33,7 +55,7 @@ public class RoutingInformationProtocol
 
         unicastInterface.UPDataReq(
             nodeId,
-            RoutingInformationProtocolOperation.RIPRQT.name()
+            RoutingInformationProtocolOperationType.REQUEST.name()
         );
 
         return true;
@@ -46,7 +68,7 @@ public class RoutingInformationProtocol
         }
 
         String packedData =
-            RoutingInformationProtocolOperation.RIPGET.name() +
+            RoutingInformationProtocolOperationType.GET.name() +
             " " +
             firstNodeId +
             " " +
@@ -71,7 +93,7 @@ public class RoutingInformationProtocol
         }
 
         String packedData =
-            RoutingInformationProtocolOperation.RIPSET.name() +
+            RoutingInformationProtocolOperationType.SET.name() +
             " " +
             firstNodeId +
             " " +

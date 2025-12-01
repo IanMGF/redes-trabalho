@@ -1,4 +1,4 @@
-package rip;
+package rip.manager;
 
 public interface RoutingProtocolManagementInterface {
     boolean getDistanceTable(short nodeId);
