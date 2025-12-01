@@ -147,6 +147,7 @@ public class RoutingInformationProtocol
         try {
             latestDataAccess.acquire();
             latestOperation = operation;
+            operationResponseTimeout = new Timer();
             operationResponseTimeout.scheduleAtFixedRate(new TimerTask (){
                 @Override
                 public void run() { unicastInterface.UPDataReq(targetNodeId, operation.toString()); }
@@ -163,7 +164,6 @@ public class RoutingInformationProtocol
             latestOperation = null;
             latestNodeId = -1;
             operationResponseTimeout.cancel();
-            operationResponseTimeout = new Timer();
             latestDataAccess.release();
         } catch (InterruptedException e) {
             System.err.printf("Erro ao capturar semáforo latestDataAccess:\n%s\n", e);
