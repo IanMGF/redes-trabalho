@@ -37,6 +37,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
      * @throws FileNotFoundException If `unicast.conf` was not found
      * @throws UnknownHostException If a host within `unicast.conf`could not be found
      * @throws InvalidFormatException If `unicast.conf` is not properly formatted
+     * @throws InvalidPortException If there is an invalid port in the configuration file
      * @throws SocketException If the socket could not be opened or bound
      */
     public UnicastProtocol(
