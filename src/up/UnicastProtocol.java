@@ -2,6 +2,8 @@ package up;
 
 import exceptions.DataSizeException;
 import exceptions.InvalidFormatException;
+import exceptions.InvalidPortException;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -42,7 +44,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
             int port,
             UnicastServiceUserInterface userInterface
     )
-        throws IllegalArgumentException, FileNotFoundException, UnknownHostException, SocketException, InvalidFormatException {
+        throws IllegalArgumentException, FileNotFoundException, UnknownHostException, SocketException, InvalidFormatException, InvalidPortException {
         this.UCSApId = UCSApId;
 
         this.configuration = UnicastConfiguration.LoadFromFile(
