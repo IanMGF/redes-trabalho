@@ -8,6 +8,7 @@ import exceptions.RepeatedLinkException;
 import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,7 +16,8 @@ import java.util.regex.Pattern;
 public class RoutingInformationConfiguration {
     /** Private helper class to semantically encapsule the idea of a node link
      * This class overrides the hashCode method, so two different NodeLink objects
-     * can have the same hash, if they connect the same two nodes (independent of order)
+     * can have the same hash, if they connect the same two nodes (independent of order).
+     *
      */
     private static class NodeLink {
         short nodeAId;
@@ -32,7 +34,7 @@ public class RoutingInformationConfiguration {
                 return false;
             }
 
-            return (nodeAId ==  nodeLink.nodeAId && nodeBId == nodeLink.nodeBId) || (nodeAId == nodeLink.nodeBId && nodeBId == nodeLink.nodeAId);
+            return (nodeAId == nodeLink.nodeAId && nodeBId == nodeLink.nodeBId) || (nodeAId == nodeLink.nodeBId && nodeBId == nodeLink.nodeAId);
         }
 
         @Override
@@ -64,36 +66,34 @@ public class RoutingInformationConfiguration {
         reader = new BufferedReader(new FileReader(file));
         final HashSet<Short> nodeIds = new HashSet<>();
 
-
-        for (String line : reader.lines().toList()) {
+        List<String> lines = reader.lines().toList();
+        for (String line : lines) {
             Matcher matcher = PATTERN.matcher(line);
 
             if (!matcher.matches()) {
-                try {                    reader.close();
-                } catch (IOException e) {
-                    System.err.println(e.getMessage());
-                }
-                throw new InvalidFormatException(
-                        "Line does not follow format of <node_id> <node_id> <cost>:\n\"%s\"".formatted(
-                                line
-                        ), line
-                );
-            }
-
-            short nodeAId = (short) Integer.parseInt(matcher.group(1));
-            short nodeBId = (short) Integer.parseInt(matcher.group(2));
-            int cost = Integer.parseInt(matcher.group(3));
-
-            if (nodeAId <= 0 || nodeAId >= 16
-                || nodeBId <= 0 || nodeBId >= 16) {
                 try {
                     reader.close();
                 } catch (IOException e) {
                     System.err.println(e.getMessage());
                 }
-                throw new InvalidNodeIdException(
-                        nodeAId, "Node ID not in range [1, 15]"
-                );
+                String errorMessage = "Line does not follow format of <node_id> <node_id> <cost>:\n\"%s\"".formatted(line);
+                throw new InvalidFormatException(errorMessage, line);
+            }
+
+            short nodeAId = Short.parseShort(matcher.group(1));
+            short nodeBId = Short.parseShort(matcher.group(2));
+            int cost = Integer.parseInt(matcher.group(3));
+
+            boolean isNodeAIdInRange = (nodeAId >= 1 && nodeAId <= 15);
+            boolean isNodeBIdInRange = (nodeBId >= 1 && nodeBId <= 15);
+
+            if (isNodeAIdInRange && isNodeBIdInRange) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    System.err.println(e.getMessage());
+                }
+                throw new InvalidNodeIdException(nodeAId, "Node ID not in range [1, 15]");
             }
 
             if (cost <= 0 || cost >= 16) {
@@ -134,13 +134,16 @@ public class RoutingInformationConfiguration {
         return configuration;
     }
 
+    /**
+     * Returns the link cost between the two nodes with the given ID.
+     * If such link is not found, returns `null` instead.
+     * @param nodeAId One of the nodes that are linked
+     * @param nodeBId The other node that is linked
+     * @return The cost of the link
+     * @apiNote getCost(a, b) == getCost(b, a), for any valid pair (a, b)
+     */
     public Integer getCost(short nodeAId, short nodeBId) {
-        Integer cost = null;
-        cost = configuration.get(new NodeLink(nodeAId, nodeBId));
-        if (cost == null) {
-            cost = configuration.get(new NodeLink(nodeBId, nodeAId));
-        }
-        return cost;
+        return configuration.get(new NodeLink(nodeAId, nodeBId));
     }
 
     public int getNodeCount() {
