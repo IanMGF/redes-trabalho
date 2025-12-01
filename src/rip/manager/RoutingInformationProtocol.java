@@ -1,12 +1,13 @@
 package rip.manager;
 
-import exceptions.InvalidFormatException;
-import exceptions.InvalidPortException;
+import exceptions.*;
+import rip.RoutingInformationConfiguration;
 import rip.operations.*;
 import up.UnicastProtocol;
 import up.UnicastServiceInterface;
 import up.UnicastServiceUserInterface;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -26,7 +27,7 @@ public class RoutingInformationProtocol
     private final int PORT = 520;
     private UnicastServiceInterface unicastInterface;
     private RoutingProtocolManagementServiceUserInterface ripServiceUserInterface;
-
+    private RoutingInformationConfiguration networkTopology;
     private RoutingInformationProtocolOperation latestOperation;
     private short latestNodeId;
     private Timer operationResponseTimeout;
@@ -36,8 +37,29 @@ public class RoutingInformationProtocol
     public RoutingInformationProtocol(
         RoutingProtocolManagementServiceUserInterface ripServiceUserInterface, int timeoutMilliseconds
     ) {
+        File ripConfigurationFile = new File("rip.conf");
+        networkTopology = null;
         try {
-            UnicastServiceInterface unicastInterface = new UnicastProtocol(UCSAPID, PORT, this);
+            networkTopology = RoutingInformationConfiguration.loadFromFile(ripConfigurationFile);
+        } catch (FileNotFoundException fnfe) {
+            System.err.println("Erro : Não foi encontrado arquivo de configuração do Routing Information Protocol ('rip.conf')");
+        } catch (InvalidFormatException ife) {
+            System.err.printf("Erro: Linha do arquivo de configuração Routing Information Protocol não seguem o formato <RIPNode_1> <RIPNode_2> <custo>: '%s'\n", ife.getText());
+        } catch (NonIncrementalIdsException niie) {
+            System.err.println("Erro: Ids dos nós no arquivo de configuração do Routing Information Protocol('rip.conf') não estão no fomato incremental");
+        } catch (InvalidNodeIdException inie) {
+            System.err.printf("Erro: Id[%d] do(s) nó(s) no arquivo de configuração do Routing Information Protocol('rip.conf') não é um número inteiro entre 1 e 15\n", inie.getNodeId());
+        } catch (RepeatedLinkException rle) {
+            System.err.printf("Erro: Par não-ordenado de IDs ([%d], [%d]) encontrado mais de uma vez no arquivo de configuração do Routing Information Protocol('rip.conf')\n", rle.getNodeAId(), rle.getNodeBId());
+        }
+
+        if (networkTopology == null) {
+            return;
+        }
+
+        unicastInterface = null;
+        try {
+            unicastInterface = new UnicastProtocol(UCSAPID, PORT, this);
         } catch (IllegalArgumentException iae) {
             System.err.println("Erro : Conjunto ID e Porta não foram encontrados no arquivo de configuração do Unicast");
         } catch (FileNotFoundException fnfe) {
@@ -50,6 +72,10 @@ public class RoutingInformationProtocol
             System.err.printf("Erro: Linha do arquivo de configuração Unicast não seguem o formato <ucsapid> <host> <porta>: '%s'\n", ife.getText());
         } catch (InvalidPortException ipe) {
             System.err.printf("Erro: Porta inválida encontrada no arquivo de configuração: %s. Portas válidas: 1025-65535\n", ipe.getPort());
+        }
+
+        if(unicastInterface == null) {
+            return;
         }
 
         this.ripServiceUserInterface = ripServiceUserInterface;
@@ -188,13 +214,12 @@ public class RoutingInformationProtocol
         }
     }
 
-    //TODO : finish validation methods
     private boolean isNodeValid(short nodeId) {
-        return true;
+        return nodeId <= networkTopology.getNodeCount() && nodeId >= 1;
     }
 
     private boolean isLinkValid(short firstNodeId, short secondNodeId) {
-        return true;
+        return networkTopology.getCost(firstNodeId, secondNodeId) != null;
     }
 
     private boolean isCostValid(int linkCost) {
