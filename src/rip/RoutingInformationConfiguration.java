@@ -1,9 +1,6 @@
 package rip;
 
-import exceptions.InvalidFormatException;
-import exceptions.InvalidNodeIdException;
-import exceptions.NonIncrementalIdsException;
-import exceptions.RepeatedLinkException;
+import exceptions.*;
 
 import java.io.*;
 import java.util.HashMap;
@@ -55,11 +52,12 @@ public class RoutingInformationConfiguration {
      * @return A configuration loaded from the file
      * @throws FileNotFoundException If `file` could not be found
      * @throws InvalidNodeIdException If a node ID is not in range [1, 15]
+     * @throws InvalidCostException If a cost is not in range [1, 15]
      * @throws InvalidFormatException If the format of the file is wrong
      * @throws NonIncrementalIdsException If there is a gap in the IDs registered (example: 1, 2, 4, 5)
      */
     public static RoutingInformationConfiguration loadFromFile(File file)
-            throws FileNotFoundException, InvalidNodeIdException, InvalidFormatException, NonIncrementalIdsException, RepeatedLinkException {
+            throws FileNotFoundException, InvalidNodeIdException, InvalidCostException, InvalidFormatException, NonIncrementalIdsException, RepeatedLinkException {
         RoutingInformationConfiguration configuration = new RoutingInformationConfiguration();
 
         BufferedReader reader;
@@ -87,7 +85,7 @@ public class RoutingInformationConfiguration {
             boolean isNodeAIdInRange = (nodeAId >= 1 && nodeAId <= 15);
             boolean isNodeBIdInRange = (nodeBId >= 1 && nodeBId <= 15);
 
-            if (isNodeAIdInRange && isNodeBIdInRange) {
+            if (!isNodeAIdInRange || !isNodeBIdInRange) {
                 try {
                     reader.close();
                 } catch (IOException e) {
@@ -102,9 +100,7 @@ public class RoutingInformationConfiguration {
                 } catch (IOException e) {
                     System.err.println(e.getMessage());
                 }
-                throw new InvalidNodeIdException(
-                        nodeAId, "Node ID not in range [1, 15]"
-                );
+                throw new InvalidCostException(cost, "Cost not in range [1, 15]");
             }
 
             NodeLink nodeLink = new NodeLink(nodeAId, nodeBId);

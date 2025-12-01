@@ -48,7 +48,9 @@ public class RoutingInformationProtocol
         } catch (NonIncrementalIdsException niie) {
             System.err.println("Erro: Ids dos nós no arquivo de configuração do Routing Information Protocol('rip.conf') não estão no fomato incremental");
         } catch (InvalidNodeIdException inie) {
-            System.err.printf("Erro: Id[%d] do(s) nó(s) no arquivo de configuração do Routing Information Protocol('rip.conf') não é um número inteiro entre 1 e 15\n", inie.getNodeId());
+            System.err.printf("Erro: Id[%d] do(s) nó(s) no arquivo de configuração do Routing Information Protocol ('rip.conf') não é um número inteiro entre 1 e 15\n", inie.getNodeId());
+        } catch (InvalidCostException ice) {
+            System.err.printf("Erro: Custo %d presente no arquivo de configuração do Routing Information Protocol ('rip.conf') não é um número inteiro entre 1 e 15\n", ice.getCost());
         } catch (RepeatedLinkException rle) {
             System.err.printf("Erro: Par não-ordenado de IDs ([%d], [%d]) encontrado mais de uma vez no arquivo de configuração do Routing Information Protocol('rip.conf')\n", rle.getNodeAId(), rle.getNodeBId());
         }
