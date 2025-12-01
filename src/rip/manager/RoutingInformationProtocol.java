@@ -1,5 +1,6 @@
-package rip;
+package rip.manager;
 
+import rip.RoutingInformationProtocolOperation;
 import up.UnicastServiceInterface;
 import up.UnicastServiceUserInterface;
 
