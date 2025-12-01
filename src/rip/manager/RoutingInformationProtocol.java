@@ -168,10 +168,6 @@ public class RoutingInformationProtocol
     }
 
     private boolean isCostValid(int linkCost) {
-        if ((linkCost > 0 && linkCost < 16) || linkCost == -1) {
-            return true;
-        } else {
-            return false;
-        }
+        return (linkCost > 0 && linkCost < 16) || linkCost == -1;
     }
 }
