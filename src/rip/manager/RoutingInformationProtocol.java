@@ -2,8 +2,7 @@ package rip.manager;
 
 import exceptions.InvalidFormatException;
 import exceptions.InvalidPortException;
-import rip.operations.RoutingInformationProtocolOperation;
-import rip.operations.RoutingInformationProtocolOperationType;
+import rip.operations.*;
 import up.UnicastProtocol;
 import up.UnicastServiceInterface;
 import up.UnicastServiceUserInterface;
@@ -11,6 +10,9 @@ import up.UnicastServiceUserInterface;
 import java.io.FileNotFoundException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Semaphore;
 
 /**
  * @author Ian Marcos Gomes e Freitas
@@ -25,8 +27,14 @@ public class RoutingInformationProtocol
     private UnicastServiceInterface unicastInterface;
     private RoutingProtocolManagementServiceUserInterface ripServiceUserInterface;
 
+    private RoutingInformationProtocolOperation latestOperation;
+    private short latestNodeId;
+    private Timer operationResponseTimeout;
+    private Semaphore latestDataAccess;
+    private int timeoutMilliseconds;
+
     public RoutingInformationProtocol(
-        RoutingProtocolManagementServiceUserInterface ripServiceUserInterface
+        RoutingProtocolManagementServiceUserInterface ripServiceUserInterface, int timeoutMilliseconds
     ) {
         try {
             UnicastServiceInterface unicastInterface = new UnicastProtocol(UCSAPID, PORT, this);
@@ -45,6 +53,14 @@ public class RoutingInformationProtocol
         }
 
         this.ripServiceUserInterface = ripServiceUserInterface;
+        this.timeoutMilliseconds = timeoutMilliseconds;
+        this.latestDataAccess = new Semaphore(1);
+    }
+
+    public RoutingInformationProtocol(
+        RoutingProtocolManagementServiceUserInterface ripServiceUserInterface
+    ) {
+        this(ripServiceUserInterface, 10_000);
     }
 
     @Override
@@ -53,10 +69,8 @@ public class RoutingInformationProtocol
             return false;
         }
 
-        unicastInterface.UPDataReq(
-            nodeId,
-            RoutingInformationProtocolOperationType.REQUEST.name()
-        );
+        RoutingInformationProtocolOperation distanceTableRequest = new RoutingInformationProtocolRequest();
+        executeOperationOnTimeout(nodeId, distanceTableRequest);
 
         return true;
     }
@@ -67,14 +81,8 @@ public class RoutingInformationProtocol
             return false;
         }
 
-        String packedData =
-            RoutingInformationProtocolOperationType.GET.name() +
-            " " +
-            firstNodeId +
-            " " +
-            secondNodeId;
-
-        unicastInterface.UPDataReq(firstNodeId, packedData);
+        RoutingInformationProtocolOperation currOperation = new RoutingInformationProtocolGet(firstNodeId, secondNodeId);
+        executeOperationOnTimeout(firstNodeId, currOperation);
 
         return true;
     }
@@ -92,22 +100,63 @@ public class RoutingInformationProtocol
             return false;
         }
 
-        String packedData =
-            RoutingInformationProtocolOperationType.SET.name() +
-            " " +
-            firstNodeId +
-            " " +
-            secondNodeId +
-            " " +
-            newLinkCost;
-
-        unicastInterface.UPDataReq(firstNodeId, packedData);
+        RoutingInformationProtocolSet currOperation = new RoutingInformationProtocolSet(firstNodeId, secondNodeId, (short) newLinkCost);
+        executeOperationOnTimeout(firstNodeId, currOperation);
 
         return true;
     }
 
+    private void executeOperationOnTimeout(short targetNodeId, RoutingInformationProtocolOperation operation) {
+        try {
+            latestDataAccess.acquire();
+            latestOperation = operation;
+            operationResponseTimeout.scheduleAtFixedRate(new TimerTask (){
+                @Override
+                public void run() { unicastInterface.UPDataReq(targetNodeId, operation.toString()); }
+            }, 0, timeoutMilliseconds);
+            latestDataAccess.release();
+        } catch (InterruptedException e) {
+            System.err.printf("Erro ao capturar semáforo latestDataAccess:\n%s\n", e);
+        }
+    }
+
+    private void terminateOperationTimeout() {
+        try {
+            latestDataAccess.acquire();
+            latestOperation = null;
+            latestNodeId = -1;
+            operationResponseTimeout.cancel();
+            operationResponseTimeout = new Timer();
+            latestDataAccess.release();
+        } catch (InterruptedException e) {
+            System.err.printf("Erro ao capturar semáforo latestDataAccess:\n%s\n", e);
+        }
+    }
+
     @Override
-    public void UPDataInd(short Nodeid, String data) {}
+    public void UPDataInd(short Nodeid, String data) {
+        RoutingInformationProtocolOperation receivedOperation = RoutingInformationProtocolOperationParser.parse(data);
+        if (receivedOperation == null) return;
+
+        if (
+                latestOperation instanceof RoutingInformationProtocolGet getOperation
+                && receivedOperation instanceof RoutingInformationProtocolNotification notifyOperation
+                && getOperation.getNodeAId() == notifyOperation.getNodeAId()
+                && getOperation.getNodeBId() == notifyOperation.getNodeBId()
+        ) {
+            terminateOperationTimeout();
+            ripServiceUserInterface.linkCostIndication(notifyOperation.getNodeAId(), notifyOperation.getNodeBId(), notifyOperation.getCost());
+        } else if (
+                latestOperation instanceof RoutingInformationProtocolRequest reqOperation
+                && receivedOperation instanceof RoutingInformationProtocolResponse responseOperation
+                && latestNodeId == responseOperation.getNodeId()
+        ) {
+            terminateOperationTimeout();
+            ripServiceUserInterface.distanceTableIndication(responseOperation.getNodeId(), responseOperation.getDistanceTable());
+        }
+
+        // TODO: Add listener for receiving operation of set link cost
+    }
 
     //TODO : finish validation methods
     private boolean isNodeValid(short nodeId) {
