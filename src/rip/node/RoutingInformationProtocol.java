@@ -53,7 +53,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             return;
         }
 
-        if (nodeID >= networkTopology.getNodeCount() || nodeID < 0) {
+        if (nodeID > networkTopology.getNodeCount() || nodeID < 1) {
             System.err.printf("Erro: Id próprio (%d) não encontrado no arquivo de configuração do Routing Information Protocol('rip.conf')\n", this.nodeID);
             return;
         }
