@@ -1,5 +1,6 @@
 package rip.operations;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,7 +23,7 @@ public class RoutingInformationProtocolResponse extends RoutingInformationProtoc
     }
 
     public static RoutingInformationProtocolResponse parse(String data) {
-        Pattern pattern = Pattern.compile(RoutingInformationProtocolOperationType.RESPONSE + " ([0-9]+) ([0-9 :]+)");
+        Pattern pattern = Pattern.compile(RoutingInformationProtocolOperationType.RESPONSE + " ([0-9]+) ([\\-0-9 :]+)");
         Matcher matcher = pattern.matcher(data);
         if (!matcher.matches()) {
             return null;
@@ -41,7 +42,10 @@ public class RoutingInformationProtocolResponse extends RoutingInformationProtoc
         String nodeIdStr = String.valueOf(nodeId);
         String[] distanceVectorStrings =  new String[distanceTable.length];
         for (int i = 0; i < distanceTable.length; i++) {
-            List<String> distancesStr = Stream.of(distanceTable[i]).map(Object::toString).toList();
+            List<String> distancesStr = new ArrayList<>(distanceTable[i].length);
+            for (int distance: distanceTable[i]) {
+                distancesStr.add(String.valueOf(distance));
+            }
             String distanceVectorStr = String.join(":", distancesStr);
             distanceVectorStrings[i] = distanceVectorStr;
         }

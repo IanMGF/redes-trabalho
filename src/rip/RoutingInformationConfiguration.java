@@ -35,7 +35,7 @@ public class RoutingInformationConfiguration {
             return set.hashCode();
         }
     }
-    private static final Pattern PATTERN = Pattern.compile("([0-9]+) ([0-9]+) ([0-9]+)");
+    private static final Pattern PATTERN = Pattern.compile("([0-9]+) ([0-9]+) (-?[0-9]+)");
     private final HashMap<NodeLink, Integer> configuration = new HashMap<>();
     private int nodeCount = 0;
 

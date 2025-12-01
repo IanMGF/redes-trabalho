@@ -147,6 +147,7 @@ public class RoutingInformationProtocol
         try {
             latestDataAccess.acquire();
             latestOperation = operation;
+            latestNodeId = targetNodeId;
             operationResponseTimeout = new Timer();
             operationResponseTimeout.scheduleAtFixedRate(new TimerTask (){
                 @Override

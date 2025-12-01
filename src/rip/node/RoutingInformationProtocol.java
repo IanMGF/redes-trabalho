@@ -90,21 +90,24 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
 
         this.linkCosts = new Integer[networkTopology.getNodeCount()];
         for (int i = 0; i < linkCosts.length; i++) {
-            if(i == this.nodeID - 1){
+            int equivalentId = i + 1;
+            if(equivalentId == this.nodeID){
                 this.linkCosts[i] = 0;
             }
             else{
-                this.linkCosts[i] = networkTopology.getCost((short)(this.nodeID - 1), (short)(i + 1));
+                this.linkCosts[i] = networkTopology.getCost(this.nodeID, (short) equivalentId);
             }
         }
 
         this.nodeDistances = new Integer[networkTopology.getNodeCount()][networkTopology.getNodeCount()];
         for (int i = 0; i < nodeDistances.length; i++) {
-            if(linkCosts[i] == null || i == this.nodeID - 1){
+            int nodeIndex = this.nodeID - 1;
+            if(linkCosts[i] == null || i == nodeIndex){
                 continue;
             }
 
             Arrays.fill(nodeDistances[i], -1);
+            nodeDistances[i][i] = 0;
         }
 
         this.distanceVector = new int[networkTopology.getNodeCount()];
@@ -171,12 +174,14 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         try {
             nodeDistancesAccess.acquire();
             for (int j = 0; j < this.linkCosts.length; j++) {
-                if (this.linkCosts[j] == null || this.linkCosts[j] == -1 || this.nodeDistances[j][nodeId] == null) {
+                boolean isValidDistance = this.nodeDistances[j][nodeId] != null && this.nodeDistances[j][nodeId] != -1;
+                boolean isValidCost = this.linkCosts[j] != null && this.linkCosts[j] != -1;
+                if (!isValidCost || !isValidDistance) {
                     continue;
                 }
 
                 short newDistance = (short) (this.linkCosts[j] + this.nodeDistances[j][nodeId]);
-                if ((minDistance == -1 || newDistance < minDistance) && newDistance != -1) {
+                if (minDistance == -1 || newDistance < minDistance) {
                     minDistance = newDistance;
                 }
             }
@@ -359,14 +364,11 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         } else if (
                 ripOperation instanceof RoutingInformationProtocolSet set
                 && id == MANAGER_ID && set.getNodeAId() == this.nodeID
-                && linkCosts[set.getNodeBId()] != null
+                && linkCosts[set.getNodeBId() - 1] != null
         ) {
             setLinkCost(set.getNodeBId(),  set.getCost());
-        } else if (
-                ripOperation instanceof RoutingInformationProtocolIndication indication
-                && indication.getNodeId() != this.nodeID
-        ) {
-            updateNeighborsDistanceVectors(indication.getNodeId(), indication.getDistanceVector());
+        } else if (ripOperation instanceof RoutingInformationProtocolIndication indication) {
+            updateNeighborsDistanceVectors(id, indication.getDistanceVector());
         } else if (ripOperation instanceof RoutingInformationProtocolRequest && id == MANAGER_ID) {
             sendDistanceTable();
         }

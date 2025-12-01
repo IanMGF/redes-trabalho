@@ -26,7 +26,7 @@ public class RoutingInformationProtocolNotification extends RoutingInformationPr
     }
 
     public static RoutingInformationProtocolNotification parse(String data) {
-        Pattern pattern = Pattern.compile(RoutingInformationProtocolOperationType.NOTIFICATION + " ([0-9]+) ([0-9]+) ([0-9]+)");
+        Pattern pattern = Pattern.compile(RoutingInformationProtocolOperationType.NOTIFICATION + " ([0-9]+) ([0-9]+) (-?[0-9]+)");
         Matcher matcher = pattern.matcher(data);
         if (!matcher.matches()) {
             return null;
@@ -34,7 +34,7 @@ public class RoutingInformationProtocolNotification extends RoutingInformationPr
 
         short nodeAId = Short.parseShort(matcher.group(1));
         short nodeBId = Short.parseShort(matcher.group(2));
-        int cost = Integer.parseInt(matcher.group(2));
+        int cost = Integer.parseInt(matcher.group(3));
         return new RoutingInformationProtocolNotification(nodeAId, nodeBId, cost);
     }
 

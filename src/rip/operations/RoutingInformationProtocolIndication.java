@@ -22,7 +22,7 @@ public class RoutingInformationProtocolIndication extends RoutingInformationProt
     }
 
     public static RoutingInformationProtocolIndication parse(String data) {
-        Pattern pattern = Pattern.compile(RoutingInformationProtocolOperationType.INDICATION + " ([0-9]+) ([0-9 :]+)");
+        Pattern pattern = Pattern.compile(RoutingInformationProtocolOperationType.INDICATION + " ([0-9]+) ([\\-0-9 :]+)");
         Matcher matcher = pattern.matcher(data);
         if (!matcher.matches()) {
             return null;

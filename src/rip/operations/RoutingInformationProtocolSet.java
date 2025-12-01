@@ -43,7 +43,7 @@ public class RoutingInformationProtocolSet extends RoutingInformationProtocolOpe
     }
 
     public static RoutingInformationProtocolSet parse(String data) {
-        Pattern pattern = Pattern.compile(RoutingInformationProtocolOperationType.SET + " ([0-9]+) ([0-9]+) ([0-9]+)");
+        Pattern pattern = Pattern.compile(RoutingInformationProtocolOperationType.SET + " ([0-9]+) ([0-9]+) (-?[0-9]+)");
         Matcher matcher = pattern.matcher(data);
         if (!matcher.matches()) {
             return null;
@@ -51,7 +51,7 @@ public class RoutingInformationProtocolSet extends RoutingInformationProtocolOpe
 
         short nodeAId = Short.parseShort(matcher.group(1));
         short nodeBId = Short.parseShort(matcher.group(2));
-        short cost = Short.parseShort(matcher.group(2));
+        short cost = Short.parseShort(matcher.group(3));
         return new RoutingInformationProtocolSet(nodeAId, nodeBId, cost);
     }
 

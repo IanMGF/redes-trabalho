@@ -58,7 +58,7 @@ public class RoutingManagementApplication
         while (isRunning){
             short firstNodeId, secondNodeId;
             int cost;
-            command = sc.nextLine().toUpperCase();
+            command = sc.nextLine().toUpperCase().strip();
 
             switch (command) {
                 case "GET-TABLE":
@@ -97,7 +97,7 @@ public class RoutingManagementApplication
 
                     if(ripInterface.getLinkCost(firstNodeId, secondNodeId)){
                         System.out.printf("Requisição do custo de enlace entre nó (%d) e nó (%d) enviada para nó (%d)\n", firstNodeId, secondNodeId, firstNodeId);
-                        System.err.println("Esperando resposta...");
+                        System.out.println("Esperando resposta...");
 
                         try{
                             waiting_response.acquire();
@@ -124,7 +124,7 @@ public class RoutingManagementApplication
 
                     if(ripInterface.setLinkCost(firstNodeId, secondNodeId, cost)){
                         System.out.printf("Requisição de alteração do custo de enlace entre nó (%d) e nó (%d) para %d enviada\n", firstNodeId, secondNodeId, cost);
-                        System.err.println("Esperando resposta...");
+                        System.out.println("Esperando resposta...");
 
                         try{
                             waiting_response.acquire();
@@ -140,6 +140,8 @@ public class RoutingManagementApplication
                     System.out.println("Saindo...");
                     isRunning = false;
                     sc.close();
+                    continue;
+                case "":
                     continue;
                 default:
                     System.out.println("Comando não reconhecido");
