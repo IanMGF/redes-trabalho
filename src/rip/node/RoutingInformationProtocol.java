@@ -12,18 +12,20 @@ import java.io.FileNotFoundException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Semaphore;
+
 
 public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     private final short MANAGER_ID = 0;
-    private final int PORT = 520;
     private short nodeID;
     private Integer[] linkCosts;
     private int[] distanceVector;
-    private Integer[][] nodesDistance;
+    private Integer[][] nodeDistances;
     private UnicastServiceInterface unicastInterface;
+
+    private Semaphore distanceTableAccess;
 
 
     public RoutingInformationProtocol(short nodeID) {
@@ -59,6 +61,9 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         this.nodeID = nodeID;
 
         this.unicastInterface = null;
+
+        // Default port of the Routing Information Protocol
+        int PORT = 520;
         try {
             unicastInterface = new UnicastProtocol(nodeID, PORT, this);
         } catch (IllegalArgumentException iae) {
@@ -93,32 +98,50 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         distanceVector = new int[networkTopology.getNodeCount()];
         updateDistanceVector();
 
-        nodesDistance = new Integer[networkTopology.getNodeCount()][networkTopology.getNodeCount()];
+        nodeDistances = new Integer[networkTopology.getNodeCount()][networkTopology.getNodeCount()];
 
-        for (int i = 0; i < nodesDistance.length; i++) {
+        for (int i = 0; i < nodeDistances.length; i++) {
             if(linkCosts[i] == null || i == this.nodeID - 1){
                 continue;
             }
 
-            Arrays.fill(nodesDistance[i], -1);
+            Arrays.fill(nodeDistances[i], -1);
         }
 
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(this::notifyNeighbors, timeoutSeconds, timeoutSeconds, TimeUnit.SECONDS);
+        Timer periodicSender = new Timer();
+        periodicSender.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                notifyNeighbors();
+            }
+        }, timeoutSeconds * 1_000, timeoutSeconds * 1_000);
+
+        distanceTableAccess = new Semaphore(1);
     }
 
     private void updateDistanceVector() {
-        int[] oldDistanceVector = distanceVector.clone();
-        calculateDistanceVector();
-        if(!Arrays.equals(oldDistanceVector, this.distanceVector)){
-            notifyNeighbors();
+        try {
+            distanceTableAccess.acquire();
+            int [] newDistanceVector = calculateNewDistanceVector(distanceVector);
+            if(!Arrays.equals(newDistanceVector, this.distanceVector)){
+                this.distanceVector = newDistanceVector;
+                distanceTableAccess.release();
+                notifyNeighbors();
+            } else {
+                distanceTableAccess.release();
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void calculateDistanceVector(){
-        for (int i = 0; i < this.distanceVector.length; i++) {
-            if (i == this.nodeID - 1){
-                this.distanceVector[i] = 0;
+
+    private int[] calculateNewDistanceVector(int[] currDistanceVector){
+        int[] newDistanceVector = currDistanceVector.clone();
+        for (int i = 0; i < currDistanceVector.length; i++) {
+            int equivalentId = i + 1;
+            if (equivalentId == this.nodeID){
+                newDistanceVector[i] = 0;
                 continue;
             }
 
@@ -133,19 +156,26 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
                     minDistance = newDistance;
                 }
             }
-            this.distanceVector[i] = minDistance;
+            newDistanceVector[i] = minDistance;
         }
+        return newDistanceVector;
     }
 
     private void notifyNeighbors(){
-        for (int i = 0; i < this.linkCosts.length; i++) {
-            int id = i + 1;
-            if (id != this.nodeID && this.linkCosts[i] != null && this.linkCosts[i] != -1){
+        try {
+            for (int i = 0; i < this.linkCosts.length; i++) {
+                int equivalentId = i + 1;
+                if (equivalentId != this.nodeID && this.linkCosts[i] != null && this.linkCosts[i] != -1) {
 
-                short neighborID = (short) id;
-                RoutingInformationProtocolIndication ripInd = new RoutingInformationProtocolIndication(neighborID, distanceVector);
-                unicastInterface.UPDataReq(neighborID, ripInd.toString());
+                    short neighborID = (short) equivalentId;
+                    distanceTableAccess.acquire();
+                    RoutingInformationProtocolIndication ripInd = new RoutingInformationProtocolIndication(neighborID, distanceVector);
+                    distanceTableAccess.release();
+                    unicastInterface.UPDataReq(neighborID, ripInd.toString());
+                }
             }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -160,7 +190,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         linkCosts[neighborId - 1] =  cost;
 
         if(cost == -1){
-            Arrays.fill(nodesDistance[neighborId - 1], -1);
+            Arrays.fill(nodeDistances[neighborId - 1], -1);
         }
 
         updateDistanceVector();
@@ -168,8 +198,8 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     }
 
     private void updateNeighborsDistanceVectors(short neighborID, int[] distanceVector){
-        for (int i=0; i < nodesDistance[neighborID -1].length; i++){
-            nodesDistance[neighborID -1][i] = distanceVector[i];
+        for (int i = 0; i < nodeDistances[neighborID -1].length; i++){
+            nodeDistances[neighborID -1][i] = distanceVector[i];
         }
         updateDistanceVector();
     }
@@ -182,23 +212,29 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             }
         }
 
-        int[] neighborsIndexes =  new int[neighborsCount];
+        int[] neighborIndexes =  new int[neighborsCount];
         for (int i = 0; i < linkCosts.length; i++) {
             if (linkCosts[i] != null) {
-                neighborsIndexes[i] = i;
+                neighborIndexes[i] = i;
             }
         }
 
-        int[][] distanceTable = new int[neighborsCount + 1][nodesDistance.length];
+        int[][] distanceTable = new int[neighborsCount + 1][nodeDistances.length];
 
-        distanceTable[0] = distanceVector.clone();
+        try {
+            distanceTableAccess.acquire();
+            distanceTable[0] = distanceVector.clone();
+            distanceTableAccess.release();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         for (int i = 1; i < distanceTable.length; i++) {
             for (int j = 0; i < distanceTable[i].length; i++) {
-                if(linkCosts[neighborsIndexes[i - 1]] == -1 || nodesDistance[neighborsIndexes[i - 1]][j] == -1){
+                if(linkCosts[neighborIndexes[i - 1]] == -1 || nodeDistances[neighborIndexes[i - 1]][j] == -1){
                     distanceTable[i][j] = -1;
                 } else {
-                    distanceTable[i][j] = (linkCosts[neighborsIndexes[i - 1]] + nodesDistance[neighborsIndexes[i - 1]][j]);
+                    distanceTable[i][j] = (linkCosts[neighborIndexes[i - 1]] + nodeDistances[neighborIndexes[i - 1]][j]);
                 }
             }
         }
