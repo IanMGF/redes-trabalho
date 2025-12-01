@@ -1,9 +1,9 @@
 package rip.operations;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 public class RoutingInformationProtocolIndication extends RoutingInformationProtocolOperation {
     private final short nodeId;
@@ -39,7 +39,10 @@ public class RoutingInformationProtocolIndication extends RoutingInformationProt
     public String toString() {
         String typeIndicator = RoutingInformationProtocolOperationType.INDICATION.toString();
         String nodeIdStr = String.valueOf(getNodeId());
-        List<String> distancesStr = Stream.of(getDistanceVector()).map(Object::toString).toList();
+        List<String> distancesStr = new ArrayList<>(distanceVector.length);
+        for (int distance: distanceVector) {
+            distancesStr.add(String.valueOf(distance));
+        }
         String distanceVectorStr = String.join(":", distancesStr);
 
         return typeIndicator + " " +  nodeIdStr + " " + distanceVectorStr;
