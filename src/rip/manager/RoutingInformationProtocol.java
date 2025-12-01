@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author Ian Marcos Gomes e Freitas
@@ -24,7 +25,6 @@ import java.util.concurrent.Semaphore;
 public class RoutingInformationProtocol
     implements UnicastServiceUserInterface, RoutingProtocolManagementInterface {
     private final short UCSAPID = 0;
-    private final int PORT = 520;
     private UnicastServiceInterface unicastInterface;
     private RoutingProtocolManagementServiceUserInterface ripServiceUserInterface;
     private RoutingInformationConfiguration networkTopology;
@@ -34,9 +34,9 @@ public class RoutingInformationProtocol
     private Semaphore latestDataAccess;
     private int timeoutMilliseconds;
 
-    public RoutingInformationProtocol(
-        RoutingProtocolManagementServiceUserInterface ripServiceUserInterface, int timeoutMilliseconds
-    ) {
+    public RoutingInformationProtocol (
+        RoutingProtocolManagementServiceUserInterface ripServiceUserInterface, int timeoutMilliseconds, int port
+    ) throws IllegalArgumentException {
         File ripConfigurationFile = new File("rip.conf");
         networkTopology = null;
         try {
@@ -56,18 +56,18 @@ public class RoutingInformationProtocol
         }
 
         if (networkTopology == null) {
-            return;
+            throw new IllegalStateException();
         }
 
         unicastInterface = null;
         try {
-            unicastInterface = new UnicastProtocol(UCSAPID, PORT, this);
+            unicastInterface = new UnicastProtocol(UCSAPID, port, this);
         } catch (IllegalArgumentException iae) {
             System.err.println("Erro : Conjunto ID e Porta não foram encontrados no arquivo de configuração do Unicast");
         } catch (FileNotFoundException fnfe) {
             System.err.println("Erro : Não foi encontrado arquivo de configuração do Unicast ('unicast.conf')");
         } catch (SocketException se) {
-            System.err.printf("Erro : Não foi possível inicar atrelar socket à porta %s\n", PORT);
+            System.err.printf("Erro : Não foi possível atrelar socket à porta %s\n", port);
         } catch (UnknownHostException uhe) {
             System.err.printf("Erro : Endereço IP: '%s' contido no arquivo de configuração do Unicast é inválido\n", uhe);
         } catch (InvalidFormatException ife) {
@@ -77,7 +77,7 @@ public class RoutingInformationProtocol
         }
 
         if(unicastInterface == null) {
-            return;
+            throw new IllegalStateException();
         }
 
         this.ripServiceUserInterface = ripServiceUserInterface;
@@ -86,9 +86,9 @@ public class RoutingInformationProtocol
     }
 
     public RoutingInformationProtocol(
-        RoutingProtocolManagementServiceUserInterface ripServiceUserInterface
-    ) {
-        this(ripServiceUserInterface, 10_000);
+        RoutingProtocolManagementServiceUserInterface ripServiceUserInterface, int port
+    ) throws IllegalStateException {
+        this(ripServiceUserInterface, 10_000, port);
     }
 
     @Override
