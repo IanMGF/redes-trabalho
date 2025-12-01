@@ -6,7 +6,7 @@ package exceptions;
  *
  *
  */
-public class InvalidUnicastDataUnitException extends RuntimeException {
+public class InvalidUnicastDataUnitException extends Exception {
     public final String data;
     public InvalidUnicastDataUnitException(String data) {
         super("Bad protocol data unit: \"%s\"".formatted(data));

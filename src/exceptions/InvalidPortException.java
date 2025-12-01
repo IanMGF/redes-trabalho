@@ -1,6 +1,6 @@
 package exceptions;
 
-public class InvalidPortException extends RuntimeException {
+public class InvalidPortException extends Exception {
     private final int port;
     public InvalidPortException(int port, String message) {
         super(message);
