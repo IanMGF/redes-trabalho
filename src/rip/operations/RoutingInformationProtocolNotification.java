@@ -6,8 +6,8 @@ import java.util.regex.Pattern;
 public class RoutingInformationProtocolNotification extends RoutingInformationProtocolOperation {
     private final short nodeAId;
     private final short nodeBId;
-    private final short cost;
-    public RoutingInformationProtocolNotification(short nodeAId, short nodeBId, short cost) {
+    private final int cost;
+    public RoutingInformationProtocolNotification(short nodeAId, short nodeBId, int cost) {
         this.nodeAId = nodeAId;
         this.nodeBId = nodeBId;
         this.cost = cost;
@@ -21,7 +21,7 @@ public class RoutingInformationProtocolNotification extends RoutingInformationPr
         return nodeBId;
     }
 
-    public short getCost() {
+    public int getCost() {
         return cost;
     }
 
@@ -34,7 +34,7 @@ public class RoutingInformationProtocolNotification extends RoutingInformationPr
 
         short nodeAId = Short.parseShort(matcher.group(1));
         short nodeBId = Short.parseShort(matcher.group(2));
-        short cost = Short.parseShort(matcher.group(2));
+        int cost = Integer.parseInt(matcher.group(2));
         return new RoutingInformationProtocolNotification(nodeAId, nodeBId, cost);
     }
 

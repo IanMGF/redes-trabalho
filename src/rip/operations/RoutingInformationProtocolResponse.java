@@ -7,8 +7,8 @@ import java.util.stream.Stream;
 
 public class RoutingInformationProtocolResponse extends RoutingInformationProtocolOperation {
     private final short nodeId;
-    private final short[][] distanceTable;
-    public RoutingInformationProtocolResponse(short nodeId, short[][] distanceTable) {
+    private final int[][] distanceTable;
+    public RoutingInformationProtocolResponse(short nodeId, int[][] distanceTable) {
         this.nodeId = nodeId;
         this.distanceTable = distanceTable;
     }
@@ -17,7 +17,7 @@ public class RoutingInformationProtocolResponse extends RoutingInformationProtoc
         return nodeId;
     }
 
-    public short[][] getDistanceTable() {
+    public int[][] getDistanceTable() {
         return distanceTable;
     }
 
@@ -30,7 +30,7 @@ public class RoutingInformationProtocolResponse extends RoutingInformationProtoc
 
         short nodeAId = Short.parseShort(matcher.group(1));
         String distanceTableStr = matcher.group(2);
-        short[][] distanceTable = DistanceTableParser.parse(distanceTableStr);
+        int[][] distanceTable = DistanceTableParser.parse(distanceTableStr);
         if (distanceTable == null) return null;
         return new RoutingInformationProtocolResponse(nodeAId, distanceTable);
     }

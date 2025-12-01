@@ -5,13 +5,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class DistanceVectorParser {
-    public static short[] parse(String data) {
+    public static int[] parse(String data) {
         List<String> strVector = List.of(data.split(":"));
-        short[] distanceVector = new short[strVector.size()];
+        int[] distanceVector = new int[strVector.size()];
         try {
             for (int i = 0; i < distanceVector.length; i++) {
                 String str = strVector.get(i);
-                distanceVector[i] = Short.parseShort(str);
+                distanceVector[i] = Integer.parseInt(str);
             }
         } catch(NumberFormatException | NullPointerException e) {
             return null;

@@ -45,7 +45,7 @@ public class RoutingInformationConfiguration {
         }
     }
     private static final Pattern PATTERN = Pattern.compile("([0-9]+) ([0-9]+) ([0-9]+)");
-    private final HashMap<NodeLink, Short> configuration = new HashMap<>();
+    private final HashMap<NodeLink, Integer> configuration = new HashMap<>();
     private int nodeCount = 0;
 
     /** Reads a configuration file, returning a RoutingInformationConfiguration object built from such file
@@ -83,7 +83,7 @@ public class RoutingInformationConfiguration {
 
             short nodeAId = (short) Integer.parseInt(matcher.group(1));
             short nodeBId = (short) Integer.parseInt(matcher.group(2));
-            short cost = (short) Integer.parseInt(matcher.group(3));
+            int cost = Integer.parseInt(matcher.group(3));
 
             if (nodeAId <= 0 || nodeAId >= 16
                 || nodeBId <= 0 || nodeBId >= 16) {
@@ -135,8 +135,8 @@ public class RoutingInformationConfiguration {
         return configuration;
     }
 
-    public Short getCost(short nodeAId, short nodeBId) {
-        Short cost = null;
+    public Integer getCost(short nodeAId, short nodeBId) {
+        Integer cost = null;
         cost = configuration.get(new NodeLink(nodeAId, nodeBId));
         if (cost == null) {
             cost = configuration.get(new NodeLink(nodeBId, nodeAId));

@@ -9,8 +9,8 @@ import java.util.stream.Stream;
 
 public class RoutingInformationProtocolIndication extends RoutingInformationProtocolOperation {
     private final short nodeId;
-    private final short[] distanceVector;
-    public RoutingInformationProtocolIndication(short nodeId, short[] distanceVector) {
+    private final int[] distanceVector;
+    public RoutingInformationProtocolIndication(short nodeId, int[] distanceVector) {
         this.nodeId = nodeId;
         this.distanceVector = distanceVector;
     }
@@ -19,7 +19,7 @@ public class RoutingInformationProtocolIndication extends RoutingInformationProt
         return nodeId;
     }
 
-    public short[] getDistanceVector() {
+    public int[] getDistanceVector() {
         return distanceVector;
     }
 
@@ -32,7 +32,7 @@ public class RoutingInformationProtocolIndication extends RoutingInformationProt
 
         short nodeAId = Short.parseShort(matcher.group(1));
         String distanceTableStr = matcher.group(2);
-        short[] distanceTable = DistanceVectorParser.parse(distanceTableStr);
+        int[] distanceTable = DistanceVectorParser.parse(distanceTableStr);
         if (distanceTable == null) return null;
         return new RoutingInformationProtocolIndication(nodeAId, distanceTable);
     }

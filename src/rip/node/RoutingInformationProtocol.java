@@ -20,9 +20,9 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     private final short MANAGER_ID = 0;
     private final int PORT = 520;
     private short nodeID;
-    private Short[] linkCosts;
-    private short[] distanceVector;
-    private Short[][] nodesDistance;
+    private Integer[] linkCosts;
+    private int[] distanceVector;
+    private Integer[][] nodesDistance;
     private UnicastServiceInterface unicastInterface;
 
 
@@ -79,7 +79,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             return;
         }
 
-        this.linkCosts = new Short[networkTopology.getNodeCount()];
+        this.linkCosts = new Integer[networkTopology.getNodeCount()];
 
         for (int i = 0; i < linkCosts.length; i++) {
             if(i == this.nodeID - 1){
@@ -90,17 +90,17 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             }
         }
 
-        distanceVector = new short[networkTopology.getNodeCount()];
+        distanceVector = new int[networkTopology.getNodeCount()];
         updateDistanceVector();
 
-        nodesDistance = new Short[networkTopology.getNodeCount()][networkTopology.getNodeCount()];
+        nodesDistance = new Integer[networkTopology.getNodeCount()][networkTopology.getNodeCount()];
 
         for (int i = 0; i < nodesDistance.length; i++) {
             if(linkCosts[i] == null || i == this.nodeID - 1){
                 continue;
             }
 
-            Arrays.fill(nodesDistance[i], (short) -1);
+            Arrays.fill(nodesDistance[i], -1);
         }
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -108,7 +108,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     }
 
     private void updateDistanceVector() {
-        short[] oldDistanceVector = distanceVector.clone();
+        int[] oldDistanceVector = distanceVector.clone();
         calculateDistanceVector();
         if(!Arrays.equals(oldDistanceVector, this.distanceVector)){
             notifyNeighbors();
@@ -150,24 +150,24 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     }
 
     private void sendCost(short targetNeighborId){
-        short linkCost = this.linkCosts[targetNeighborId - 1] != null ? this.linkCosts[targetNeighborId - 1] : -1;
+        int linkCost = this.linkCosts[targetNeighborId - 1] != null ? this.linkCosts[targetNeighborId - 1] : -1;
 
         RoutingInformationProtocolNotification ripNtf = new RoutingInformationProtocolNotification(this.nodeID, targetNeighborId, linkCost);
         unicastInterface.UPDataReq(MANAGER_ID, ripNtf.toString());
     }
 
-    private void setLinkCost(short neighborId, short cost){
+    private void setLinkCost(short neighborId, int cost){
         linkCosts[neighborId - 1] =  cost;
 
         if(cost == -1){
-            Arrays.fill(nodesDistance[neighborId - 1], (short)-1);
+            Arrays.fill(nodesDistance[neighborId - 1], -1);
         }
 
         updateDistanceVector();
         sendCost(neighborId);
     }
 
-    private void updateNeighborsDistanceVectors(short neighborID, short[] distanceVector){
+    private void updateNeighborsDistanceVectors(short neighborID, int[] distanceVector){
         for (int i=0; i < nodesDistance[neighborID -1].length; i++){
             nodesDistance[neighborID -1][i] = distanceVector[i];
         }
@@ -176,7 +176,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
 
     private void sendDistanceTable(){
         int neighborsCount = 0;
-        for (Short linkCost : linkCosts) {
+        for (Integer linkCost : linkCosts) {
             if (linkCost != null) {
                 neighborsCount++;
             }
@@ -189,7 +189,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             }
         }
 
-        short[][] distanceTable = new short[neighborsCount + 1][nodesDistance.length];
+        int[][] distanceTable = new int[neighborsCount + 1][nodesDistance.length];
 
         distanceTable[0] = distanceVector.clone();
 
@@ -198,7 +198,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
                 if(linkCosts[neighborsIndexes[i - 1]] == -1 || nodesDistance[neighborsIndexes[i - 1]][j] == -1){
                     distanceTable[i][j] = -1;
                 } else {
-                    distanceTable[i][j] = (short) (linkCosts[neighborsIndexes[i - 1]] + nodesDistance[neighborsIndexes[i - 1]][j]);
+                    distanceTable[i][j] = (linkCosts[neighborsIndexes[i - 1]] + nodesDistance[neighborsIndexes[i - 1]][j]);
                 }
             }
         }
