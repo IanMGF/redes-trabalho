@@ -53,7 +53,7 @@ public class UnicastListener implements Runnable {
             }
 
             InetAddress senderAddress = packet.getAddress();
-            short senderPort = (short) packet.getPort();
+            int senderPort = packet.getPort();
 
             short UCSApId = configuration.GetId(
                     new IPAddressAndPort(senderAddress, senderPort)

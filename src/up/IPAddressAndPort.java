@@ -8,16 +8,7 @@ import java.net.InetAddress;
  *
  *
  */
-public class IPAddressAndPort {
-
-    public InetAddress address;
-    public Integer port;
-
-    IPAddressAndPort(InetAddress address, int port) {
-        this.address = address;
-        this.port = port;
-    }
-
+public record IPAddressAndPort(InetAddress address, Integer port) {
     /**
      * Checks equality between two instances of the unicast.IPAddressAndPort class
      *
@@ -30,12 +21,10 @@ public class IPAddressAndPort {
             return true;
         }
 
-        if (!(other instanceof IPAddressAndPort other_addr)) {
+        if (!(other instanceof IPAddressAndPort(InetAddress address_other, Integer port_other))) {
             return false;
         }
 
-        return (
-            address.equals(other_addr.address) && port.equals(other_addr.port)
-        );
+        return (address.equals(address_other) && port.equals(port_other));
     }
 }

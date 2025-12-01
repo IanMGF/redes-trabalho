@@ -1,7 +1,7 @@
 package exceptions;
 
 public class InvalidFormatException extends Exception {
-    private String text;
+    private final String text;
     public InvalidFormatException(String message, String text) {
         super(message);
         this.text = text;

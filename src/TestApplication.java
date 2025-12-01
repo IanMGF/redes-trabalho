@@ -55,7 +55,7 @@ public class TestApplication {
         }
         System.out.println();
 
-        // Instanciação do unicast.UnicastProtocol
+        // Instanciação do UnicastProtocol
         TestMessageReceiver messageReceiver = new TestMessageReceiver();
         try {
             unicastProtocol = new UnicastProtocol(entityUCSAPId, entityPort, messageReceiver);

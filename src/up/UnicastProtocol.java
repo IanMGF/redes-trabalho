@@ -49,7 +49,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
             new File("unicast.conf")
         );
         IPAddressAndPort ipAddressAndPort = configuration.GetAddress(UCSApId);
-        if (ipAddressAndPort == null || ipAddressAndPort.port != port) {
+        if (ipAddressAndPort == null || ipAddressAndPort.port() != port) {
             throw new IllegalArgumentException(
                 "Self not found in configuration file"
             );
@@ -130,8 +130,8 @@ public class UnicastProtocol implements UnicastServiceInterface {
         DatagramPacket packet = new DatagramPacket(
             dataBytes,
             size,
-            ipAddressAndPort.address,
-            ipAddressAndPort.port
+                ipAddressAndPort.address(),
+                ipAddressAndPort.port()
         );
         try {
             socket.send(packet);

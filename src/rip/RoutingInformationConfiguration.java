@@ -11,27 +11,20 @@ import java.util.regex.Pattern;
 
 
 public class RoutingInformationConfiguration {
-    /** Private helper class to semantically encapsule the idea of a node link
+    /**
+     * Private helper class to semantically encapsule the idea of a node link
      * This class overrides the hashCode method, so two different NodeLink objects
      * can have the same hash, if they connect the same two nodes (independent of order).
      *
      */
-    private static class NodeLink {
-        short nodeAId;
-        short nodeBId;
-
-        public NodeLink(short nodeAId, short nodeBId) {
-            this.nodeAId = nodeAId;
-            this.nodeBId = nodeBId;
-        }
-
+    private record NodeLink(short nodeAId, short nodeBId) {
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof NodeLink nodeLink)) {
+            if (!(obj instanceof NodeLink(short aId, short bId))) {
                 return false;
             }
 
-            return (nodeAId == nodeLink.nodeAId && nodeBId == nodeLink.nodeBId) || (nodeAId == nodeLink.nodeBId && nodeBId == nodeLink.nodeAId);
+            return (nodeAId == aId && nodeBId == bId) || (nodeAId == bId && nodeBId == aId);
         }
 
         @Override
