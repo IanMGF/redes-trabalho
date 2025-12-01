@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 
 public class RoutingInformationConfiguration {
     /** Private helper class to semantically encapsule the idea of a node link
-     *
      * This class overrides the hashCode method, so two different NodeLink objects
      * can have the same hash, if they connect the same two nodes (independent of order)
      */
