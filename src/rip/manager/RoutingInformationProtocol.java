@@ -46,7 +46,7 @@ public class RoutingInformationProtocol
         } catch (InvalidFormatException ife) {
             System.err.printf("Erro: Linha do arquivo de configuração Routing Information Protocol não seguem o formato <RIPNode_1> <RIPNode_2> <custo>: '%s'\n", ife.getText());
         } catch (NonIncrementalIdsException niie) {
-            System.err.println("Erro: Ids dos nós no arquivo de configuração do Routing Information Protocol('rip.conf') não estão no formato incremental");
+            System.err.println("Erro: Ids dos nós no arquivo de configuração do Routing Information Protocol('rip.conf') não estão em uma sequência incremental");
         } catch (InvalidNodeIdException inie) {
             System.err.printf("Erro: Id[%d] do(s) nó(s) no arquivo de configuração do Routing Information Protocol ('rip.conf') não é um número inteiro entre 1 e 15\n", inie.getNodeId());
         } catch (InvalidCostException ice) {

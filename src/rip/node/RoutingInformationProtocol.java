@@ -23,16 +23,19 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     private Integer[][] nodeDistances;
     private UnicastServiceInterface unicastInterface;
 
-    private Semaphore distanceTableAccess;
-    private Semaphore linkCostsAccess;
-    private Semaphore nodeDistancesAccess;
+    private final Semaphore distanceTableAccess;
+    private final Semaphore linkCostsAccess;
+    private final Semaphore nodeDistancesAccess;
 
 
-    public RoutingInformationProtocol(short nodeID) {
-        this(nodeID,10);
+    public RoutingInformationProtocol(short nodeID, int port) {
+        this(nodeID, 10, port);
     }
 
-    public RoutingInformationProtocol(short nodeID, long timeoutSeconds) {
+    public RoutingInformationProtocol(short nodeID, long timeoutSeconds, int port) {
+        distanceTableAccess = new Semaphore(1);
+        nodeDistancesAccess = new Semaphore(1);
+        linkCostsAccess = new Semaphore(1);
         File ripConfigurationFile = new File("rip.conf");
         RoutingInformationConfiguration networkTopology = null;
         try {
@@ -42,7 +45,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         } catch (InvalidFormatException ife) {
             System.err.printf("Erro: Linha do arquivo de configuração Routing Information Protocol não seguem o formato <RIPNode_1> <RIPNode_2> <custo>: '%s'\n", ife.getText());
         } catch (NonIncrementalIdsException niie) {
-            System.err.println("Erro: Ids dos nós no arquivo de configuração do Routing Information Protocol('rip.conf') não estão no formato incremental");
+            System.err.println("Erro: Ids dos nós no arquivo de configuração do Routing Information Protocol('rip.conf') não estão seguindo uma sequência incremental");
         } catch (InvalidNodeIdException inie) {
             System.err.printf("Erro: Id[%d] do(s) nó(s) no arquivo de configuração do Routing Information Protocol('rip.conf') não é um número inteiro entre 1 e 15\n", inie.getNodeId());
         } catch (InvalidCostException ice) {
@@ -55,25 +58,24 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             return;
         }
 
+        this.nodeID = nodeID;
         if (nodeID > networkTopology.getNodeCount() || nodeID < 1) {
             System.err.printf("Erro: Id próprio (%d) não encontrado no arquivo de configuração do Routing Information Protocol('rip.conf')\n", this.nodeID);
             return;
         }
 
-        this.nodeID = nodeID;
 
         this.unicastInterface = null;
 
         // Default port of the Routing Information Protocol
-        int PORT = 520;
         try {
-            unicastInterface = new UnicastProtocol(nodeID, PORT, this);
+            unicastInterface = new UnicastProtocol(nodeID, port, this);
         } catch (IllegalArgumentException iae) {
             System.err.println("Erro : Conjunto ID e Porta não foram encontrados no arquivo de configuração do Unicast");
         } catch (FileNotFoundException fnfe) {
             System.err.println("Erro : Não foi encontrado arquivo de configuração do Unicast ('unicast.conf')");
         } catch (SocketException se) {
-            System.err.printf("Erro : Não foi possível inicar atrelar socket à porta %s\n", PORT);
+            System.err.printf("Erro : Não foi possível inicar atrelar socket à porta %s\n", port);
         } catch (UnknownHostException uhe) {
             System.err.printf("Erro : Endereço IP: '%s' contido no arquivo de configuração do Unicast é inválido\n", uhe);
         } catch (InvalidFormatException ife) {
@@ -98,9 +100,8 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         }
 
         distanceVector = new int[networkTopology.getNodeCount()];
-        updateDistanceVector();
-
         nodeDistances = new Integer[networkTopology.getNodeCount()][networkTopology.getNodeCount()];
+        updateDistanceVector();
 
         for (int i = 0; i < nodeDistances.length; i++) {
             if(linkCosts[i] == null || i == this.nodeID - 1){
@@ -117,10 +118,6 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
                 notifyNeighbors();
             }
         }, timeoutSeconds * 1_000, timeoutSeconds * 1_000);
-
-        distanceTableAccess = new Semaphore(1);
-        nodeDistancesAccess = new Semaphore(1);
-        linkCostsAccess = new Semaphore(1);
     }
 
     /**
@@ -161,20 +158,35 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
                 continue;
             }
 
-            short minDistance = -1;
-            for (int j = 0; j < this.linkCosts.length; j++){
-                if (this.linkCosts[j] == null || this.linkCosts[j] == -1) {
-                    continue;
-                }
-
-                short newDistance = (short) (this.linkCosts[j] + this.nodeDistances[j][i]);
-                if ((minDistance == -1 || newDistance < minDistance) && newDistance != -1){
-                    minDistance = newDistance;
-                }
-            }
+            short minDistance = getMinDistance(i);
             newDistanceVector[i] = minDistance;
         }
         return newDistanceVector;
+    }
+
+    /**
+     * Helper function to calculate the minimum distance to a specific ID
+     */
+    private short getMinDistance(int nodeId) {
+        short minDistance = -1;
+        try {
+            nodeDistancesAccess.acquire();
+            for (int j = 0; j < this.linkCosts.length; j++) {
+                if (this.linkCosts[j] == null || this.linkCosts[j] == -1 || this.nodeDistances[j][nodeId] == null) {
+                    continue;
+                }
+
+                short newDistance = (short) (this.linkCosts[j] + this.nodeDistances[j][nodeId]);
+                if ((minDistance == -1 || newDistance < minDistance) && newDistance != -1) {
+                    minDistance = newDistance;
+                }
+            }
+            nodeDistancesAccess.release();
+            return minDistance;
+        } catch(InterruptedException e) {
+            // Can only happen if the thread is interrupted while waiting for the semaphore, which should never happen
+            throw new RuntimeException(e);
+        }
     }
 
     /**

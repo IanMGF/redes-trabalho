@@ -113,6 +113,7 @@ public class RoutingInformationConfiguration {
             System.err.println(e.getMessage());
         }
 
+        // Verificação do arquivo vazio
         short maxNodeId = nodeIds.stream().max(Short::compareTo).orElseThrow(RuntimeException::new);
         configuration.nodeCount = maxNodeId;
         for (short i=1; i<=maxNodeId; i++) {
