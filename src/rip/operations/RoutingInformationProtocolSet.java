@@ -1,7 +1,5 @@
 package rip.operations;
 
-import rip.manager.RoutingInformationProtocol;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

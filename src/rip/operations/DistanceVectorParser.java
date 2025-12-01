@@ -1,8 +1,6 @@
 package rip.operations;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class DistanceVectorParser {
     public static int[] parse(String data) {
