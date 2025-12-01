@@ -151,7 +151,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
                     continue;
                 }
 
-                short newDistance = (short) (this.linkCosts[j] + this.nodesDistance[j][i]);
+                short newDistance = (short) (this.linkCosts[j] + this.nodeDistances[j][i]);
                 if ((minDistance == -1 || newDistance < minDistance) && newDistance != -1){
                     minDistance = newDistance;
                 }
