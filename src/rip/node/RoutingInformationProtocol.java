@@ -104,14 +104,14 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         }
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(this::NotifyNeighbors, timeoutSeconds, timeoutSeconds, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::notifyNeighbors, timeoutSeconds, timeoutSeconds, TimeUnit.SECONDS);
     }
 
     private void updateDistanceVector() {
         short[] oldDistanceVector = distanceVector.clone();
         calculateDistanceVector();
         if(!Arrays.equals(oldDistanceVector, this.distanceVector)){
-            NotifyNeighbors();
+            notifyNeighbors();
         }
     }
 
@@ -137,7 +137,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         }
     }
 
-    private void NotifyNeighbors(){
+    private void notifyNeighbors(){
         for (int i = 0; i < this.linkCosts.length; i++) {
             int id = i + 1;
             if (id != this.nodeID && this.linkCosts[i] != null && this.linkCosts[i] != -1){
