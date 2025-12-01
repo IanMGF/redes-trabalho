@@ -89,7 +89,6 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         }
 
         this.linkCosts = new Integer[networkTopology.getNodeCount()];
-
         for (int i = 0; i < linkCosts.length; i++) {
             if(i == this.nodeID - 1){
                 this.linkCosts[i] = 0;
@@ -99,10 +98,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             }
         }
 
-        distanceVector = new int[networkTopology.getNodeCount()];
-        nodeDistances = new Integer[networkTopology.getNodeCount()][networkTopology.getNodeCount()];
-        updateDistanceVector();
-
+        this.nodeDistances = new Integer[networkTopology.getNodeCount()][networkTopology.getNodeCount()];
         for (int i = 0; i < nodeDistances.length; i++) {
             if(linkCosts[i] == null || i == this.nodeID - 1){
                 continue;
@@ -110,6 +106,9 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
 
             Arrays.fill(nodeDistances[i], -1);
         }
+
+        this.distanceVector = new int[networkTopology.getNodeCount()];
+        updateDistanceVector();
 
         Timer periodicSender = new Timer();
         periodicSender.scheduleAtFixedRate(new TimerTask() {
@@ -292,7 +291,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             // Calculates how many neighbors the node has
             int neighborsCount = 0;
             for (Integer linkCost : linkCosts) {
-                if (linkCost != null) {
+                if (linkCost != null && linkCost != 0) {
                     neighborsCount++;
                 }
             }
@@ -300,7 +299,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             // Traverses all nodes in order, adding only neighbors to the vector
             List<Integer> neighborIndexes = new ArrayList<>(neighborsCount);
             for (int i = 0; i < linkCosts.length; i++) {
-                if (linkCosts[i] != null) {
+                if (linkCosts[i] != null && this.nodeID != (i + 1)) {
                     neighborIndexes.add(i);
                 }
             }
@@ -315,8 +314,10 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             // Sets up values in distance table
             for (int i = 1; i < distanceTable.length; i++) {
                 int lineIdx = i - 1;
-                for (int j = 0; i < distanceTable[i].length; i++) {
+
+                for (int j = 0; j < distanceTable[i].length; j++) {
                     int neighborIdx = neighborIndexes.get(lineIdx);
+
                     if (linkCosts[neighborIdx] == -1 || nodeDistances[neighborIdx][j] == -1) {
                         distanceTable[i][j] = -1;
                     } else {
