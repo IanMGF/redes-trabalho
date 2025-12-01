@@ -106,7 +106,16 @@ public class RoutingInformationProtocol
         return true;
     }
 
+    /**
+     * Sends the operation to the layer below immediately, and sets up a timer to repeat the operation.
+     * To end the operation timer (when a valid response is received), use `terminateOperationTimeout`
+     * @param targetNodeId The ID of the node that shall receive the operation
+     * @param operation The operation to send immediately and repeat on a timer. If operation is null, nothing happens
+     */
     private void executeOperationOnTimeout(short targetNodeId, RoutingInformationProtocolOperation operation) {
+        if (operation == null)
+            return;
+
         try {
             latestDataAccess.acquire();
             latestOperation = operation;
@@ -147,15 +156,36 @@ public class RoutingInformationProtocol
             terminateOperationTimeout();
             ripServiceUserInterface.linkCostIndication(notifyOperation.getNodeAId(), notifyOperation.getNodeBId(), notifyOperation.getCost());
         } else if (
-                latestOperation instanceof RoutingInformationProtocolRequest reqOperation
+                latestOperation instanceof RoutingInformationProtocolRequest
                 && receivedOperation instanceof RoutingInformationProtocolResponse responseOperation
                 && latestNodeId == responseOperation.getNodeId()
         ) {
             terminateOperationTimeout();
             ripServiceUserInterface.distanceTableIndication(responseOperation.getNodeId(), responseOperation.getDistanceTable());
-        }
+        } else if (
+                latestOperation instanceof RoutingInformationProtocolSet setOperation
+                && receivedOperation instanceof RoutingInformationProtocolNotification notificationOperation
+                && setOperation.getNodeAId() == notificationOperation.getNodeAId()
+                && setOperation.getNodeBId() == notificationOperation.getNodeBId()
+        ) {
+            // `getInvertedOrNull` can return null if the operation has already been inverted once.
+            RoutingInformationProtocolSet invertedSet = setOperation.getInvertedOrNull();
+            short nodeBId = setOperation.getNodeBId();
+            terminateOperationTimeout();
 
-        // TODO: Add listener for receiving operation of set link cost
+            if (invertedSet != null) {
+                executeOperationOnTimeout(nodeBId, invertedSet);
+            } else {
+                // NodeA and NodeB have already been inverted.
+                // As such, the value of the original NodeA is now on NodeB, and vice versa.
+                // For this reason, we do (B, A, Cost) instead of the usual (A, B, Cost)
+                ripServiceUserInterface.linkCostIndication(
+                        notificationOperation.getNodeBId(),
+                        notificationOperation.getNodeAId(),
+                        notificationOperation.getCost()
+                );
+            }
+        }
     }
 
     //TODO : finish validation methods
