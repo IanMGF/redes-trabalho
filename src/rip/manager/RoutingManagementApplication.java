@@ -164,14 +164,14 @@ public class RoutingManagementApplication
 
     @Override
     public void distanceTableIndication(short nodeId, int[][] distanceTable) {
-        waiting_response.release();
         System.out.printf("\nTabela de distância recebida do nó (%d)\n", nodeId);
         for (int[] row : distanceTable) {
             for (int col : row) {
-                System.out.print(col + " ");
+                System.out.print(col + "\t");
             }
             System.out.println();
         }
+        waiting_response.release();
     }
 
     @Override
@@ -180,7 +180,7 @@ public class RoutingManagementApplication
         short secondNodeId,
         int linkCost
     ) {
-        waiting_response.release();
         System.out.printf("\nCusto do enlace entre nó (%d) e nó (%d) recebido = %d\n", firstNodeId, secondNodeId, linkCost);
+        waiting_response.release();
     }
 }
