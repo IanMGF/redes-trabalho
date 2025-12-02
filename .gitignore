@@ -31,4 +31,3 @@ bin/
 
 *.class
 unicast.conf
-rip.conf
