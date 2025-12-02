@@ -1,5 +1,6 @@
 package rip.node;
 
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class RoutingNodeApplication {
@@ -8,6 +9,7 @@ public class RoutingNodeApplication {
         int port;
         int nodeId;
         int timeoutMilliseconds;
+        boolean isRunning = true;
 
         System.out.println("Iniciando aplicação da entidade nó...");
         System.out.print("Escolha um valor para o timeout da propagação periódica, em milissegundos (default=10000): ");
@@ -49,6 +51,28 @@ public class RoutingNodeApplication {
         }
 
         RoutingInformationProtocol nodeEntityProtocol = new RoutingInformationProtocol((short) nodeId, (short) port);
-        System.out.println("Aplicação da entidade nó iniciada");
+        System.out.println("Digite 'EXIT' para finalizar a execução");
+        String command;
+
+        while (isRunning) {
+            command = sc.nextLine().toUpperCase().strip();
+            switch (command) {
+                case "EXIT":
+                    System.out.println("Saindo...");
+                    isRunning = false;
+                    sc.close();
+                    break;
+                case "":
+                    break;
+                default:
+                    System.out.println("Comando não reconhecido");
+                    break;
+            }
+        }
+
+        // Only reached when isRunning is set to false
+        System.out.println("Finalizando entidade");
+        sc.close();
+        System.exit(0);
     }
 }
