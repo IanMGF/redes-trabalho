@@ -150,7 +150,7 @@ public class RoutingManagementApplication
 
             printCommands();
         }
-
+        System.exit(0);
     }
 
     private static void printCommands(){
