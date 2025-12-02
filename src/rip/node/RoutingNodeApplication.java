@@ -1,9 +1,5 @@
 package rip.node;
 
-import rip.manager.RoutingManagementApplication;
-import rip.manager.RoutingProtocolManagementInterface;
-import rip.manager.RoutingProtocolManagementServiceUserInterface;
-
 import java.util.Scanner;
 
 public class RoutingNodeApplication {
