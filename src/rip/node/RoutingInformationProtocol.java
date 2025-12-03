@@ -280,6 +280,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         }
     }
 
+    // TODO : CHANGE DOCUMENTATION
     /**
      * Sends it's distance table to Manager as a response.
      * Note: Most of the computation in this function is dedicated to map relative and global indexes of neighbors
@@ -301,13 +302,9 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
                 }
             }
 
-            // Traverses all nodes in order, adding only neighbors to the vector
-            List<Integer> neighborIndexes = new ArrayList<>(neighborsCount);
-            for (int i = 0; i < linkCosts.length; i++) {
-                if (linkCosts[i] != null && this.nodeID != (i + 1)) {
-                    neighborIndexes.add(i);
-                }
-            }
+            linkCostsAccess.release();
+
+            nodeDistancesAccess.acquire();
 
             // Builds the distance table
             int[][] distanceTable = new int[neighborsCount + 1][nodeDistances.length];
@@ -316,22 +313,19 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             distanceTable[0] = distanceVector.clone();
             distanceTableAccess.release();
 
-            // Sets up values in distance table
-            for (int i = 1; i < distanceTable.length; i++) {
-                int lineIdx = i - 1;
-
-                for (int j = 0; j < distanceTable[i].length; j++) {
-                    int neighborIdx = neighborIndexes.get(lineIdx);
-
-                    if (linkCosts[neighborIdx] == -1 || nodeDistances[neighborIdx][j] == -1) {
-                        distanceTable[i][j] = -1;
-                    } else {
-                        distanceTable[i][j] = (linkCosts[neighborIdx] + nodeDistances[neighborIdx][j]);
+            // Checks if node is a neighbor and then add its distance vector to the table
+            int index = 1;
+            for (Integer[] nodeDistance : nodeDistances) {
+                if (nodeDistance[0] != null) {
+                    for (int i = 0; i < nodeDistance.length; i++) {
+                        distanceTable[index][i] = nodeDistance[i];
                     }
+                    index++;
                 }
             }
 
-            linkCostsAccess.release();
+            nodeDistancesAccess.release();
+
             RoutingInformationProtocolResponse ripRsp = new RoutingInformationProtocolResponse(this.nodeID, distanceTable);
             sendOperation(MANAGER_ID, ripRsp);
         } catch (InterruptedException e) {
