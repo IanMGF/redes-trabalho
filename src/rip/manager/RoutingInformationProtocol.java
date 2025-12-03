@@ -14,7 +14,6 @@ import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeoutException;
 
 /**
  * @author Ian Marcos Gomes e Freitas
