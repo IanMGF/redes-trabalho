@@ -11,7 +11,7 @@ public class RoutingManagementApplication
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         int port;
-        int timeoutMilliseconds;
+        Integer timeoutMilliseconds = null;
         String command;
         boolean isRunning = true;
 
@@ -19,9 +19,7 @@ public class RoutingManagementApplication
         System.out.print("Escolha um valor para o timeout de requisições em milisegundos (default=10000): ");
 
         String input = sc.nextLine();
-        if (input.isEmpty()) {
-            timeoutMilliseconds = 10000;
-        } else {
+        if (!input.isEmpty()) {
             try {
                 timeoutMilliseconds = Integer.parseInt(input);
             }  catch (NumberFormatException e) {
@@ -30,7 +28,7 @@ public class RoutingManagementApplication
             }
         }
 
-        if (timeoutMilliseconds <= 0) {
+        if (timeoutMilliseconds != null && timeoutMilliseconds <= 0) {
             System.err.println("Erro: o valor em milissegundos do timeout deve ser um inteiro maior que zero");
             return;
         }
@@ -45,9 +43,12 @@ public class RoutingManagementApplication
         }
 
         RoutingProtocolManagementServiceUserInterface managementApplication = new RoutingManagementApplication();
-        RoutingProtocolManagementInterface ripInterface = null;
+        RoutingProtocolManagementInterface ripInterface;
         try {
-            ripInterface = new RoutingInformationProtocol(managementApplication, timeoutMilliseconds, port);
+            if (timeoutMilliseconds != null)
+                ripInterface = new RoutingInformationProtocol(managementApplication, timeoutMilliseconds, port);
+            else
+                ripInterface = new RoutingInformationProtocol(managementApplication, port);
         } catch (IllegalStateException e) {
             return;
         }

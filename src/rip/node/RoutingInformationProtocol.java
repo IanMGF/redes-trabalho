@@ -67,9 +67,6 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             return;
         }
 
-
-        this.unicastInterface = null;
-
         // Default port of the Routing Information Protocol
         try {
             unicastInterface = new UnicastProtocol(nodeID, port, this);
@@ -85,10 +82,6 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             System.err.printf("Erro: Linha do arquivo de configuração Unicast não seguem o formato <ucsapid> <host> <porta>: '%s'\n", ife.getText());
         } catch (InvalidPortException ipe) {
             System.err.printf("Erro: Porta inválida encontrada no arquivo de configuração: %s. Portas válidas: 1025-65535\n", ipe.getPort());
-        }
-
-        if (unicastInterface == null) {
-            return;
         }
 
         this.linkCosts = new Integer[networkTopology.getNodeCount()];
