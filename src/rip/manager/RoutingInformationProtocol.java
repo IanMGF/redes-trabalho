@@ -27,6 +27,8 @@ public class RoutingInformationProtocol
     private UnicastServiceInterface unicastInterface;
     private RoutingProtocolManagementServiceUserInterface ripServiceUserInterface;
     private RoutingInformationConfiguration networkTopology;
+
+    // Repeat-on-timeout auxiliary fields
     private RoutingInformationProtocolOperation latestOperation;
     private short latestNodeId;
     private Timer operationResponseTimeout;

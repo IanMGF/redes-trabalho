@@ -59,6 +59,9 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         }
 
         this.nodeID = nodeID;
+
+        // Given that `networkTopology` would not have been started if nodes weren't incremental,
+        // to verify a node is in the file, it is enough to verify that it is in the specified range [1, MAX]
         if (nodeID > networkTopology.getNodeCount() || nodeID < 1) {
             System.err.printf("Erro: Id próprio (%d) não encontrado no arquivo de configuração do Routing Information Protocol('rip.conf')\n", this.nodeID);
             return;
@@ -194,7 +197,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     }
 
     /**
-     * Notifies the neighbor nodes about a cost update
+     * Notifies the neighbor nodes about a distance update
      */
     private void notifyNeighbors(){
         try {
