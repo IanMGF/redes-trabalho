@@ -89,8 +89,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             int equivalentId = i + 1;
             if(equivalentId == this.nodeID){
                 this.linkCosts[i] = 0;
-            }
-            else{
+            } else {
                 this.linkCosts[i] = networkTopology.getCost(this.nodeID, (short) equivalentId);
             }
         }
