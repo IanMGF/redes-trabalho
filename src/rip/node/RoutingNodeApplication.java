@@ -49,7 +49,10 @@ public class RoutingNodeApplication {
             return;
         }
 
-        RoutingInformationProtocol nodeEntityProtocol = new RoutingInformationProtocol((short) nodeId, (short) port);
+        // Instantiate the new entity.
+        // It is not necessary to store it in a variable, given it has no public methods,
+        // and therefore is not usable later
+        new RoutingInformationProtocol((short) nodeId, (short) port);
         System.out.println("Digite 'EXIT' para finalizar a execução");
         String command;
 
