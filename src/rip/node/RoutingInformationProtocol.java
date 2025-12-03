@@ -59,13 +59,13 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         }
 
         this.nodeID = nodeID;
+
+        // Given that `networkTopology` would not have been started if nodes weren't incremental,
+        // to verify a node is in the file, it is enough to verify that it is in the specified range [1, MAX]
         if (nodeID > networkTopology.getNodeCount() || nodeID < 1) {
             System.err.printf("Erro: Id próprio (%d) não encontrado no arquivo de configuração do Routing Information Protocol('rip.conf')\n", this.nodeID);
             return;
         }
-
-
-        this.unicastInterface = null;
 
         // Default port of the Routing Information Protocol
         try {
@@ -84,17 +84,12 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             System.err.printf("Erro: Porta inválida encontrada no arquivo de configuração: %s. Portas válidas: 1025-65535\n", ipe.getPort());
         }
 
-        if (unicastInterface == null) {
-            return;
-        }
-
         this.linkCosts = new Integer[networkTopology.getNodeCount()];
         for (int i = 0; i < linkCosts.length; i++) {
             int equivalentId = i + 1;
             if(equivalentId == this.nodeID){
                 this.linkCosts[i] = 0;
-            }
-            else{
+            } else {
                 this.linkCosts[i] = networkTopology.getCost(this.nodeID, (short) equivalentId);
             }
         }
@@ -117,7 +112,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         periodicSender.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                notifyNeighbors();
+                notifyDistanceChangeToNeighbors();
             }
         }, timeoutSeconds * 1_000, timeoutSeconds * 1_000);
     }
@@ -125,7 +120,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     /**
      * Updates {@link #distanceVector}, by calculating the new distance vector
      * (using {@link #calculateNewDistanceVector(int[])}). If the resulting vector is different from the current vector,
-     * calls {@link #notifyNeighbors()} to notify neighbor nodes about the update.
+     * calls {@link #notifyDistanceChangeToNeighbors()} to notify neighbor nodes about the update.
      */
     private void updateDistanceVector() {
         try {
@@ -134,7 +129,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             if(!Arrays.equals(newDistanceVector, this.distanceVector)){
                 this.distanceVector = newDistanceVector;
                 distanceTableAccess.release();
-                notifyNeighbors();
+                notifyDistanceChangeToNeighbors();
             } else {
                 distanceTableAccess.release();
             }
@@ -194,9 +189,9 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     }
 
     /**
-     * Notifies the neighbor nodes about a cost update
+     * Notifies the neighbor nodes about a distance update
      */
-    private void notifyNeighbors(){
+    private void notifyDistanceChangeToNeighbors(){
         try {
             linkCostsAccess.acquire();
             for (int i = 0; i < this.linkCosts.length; i++) {

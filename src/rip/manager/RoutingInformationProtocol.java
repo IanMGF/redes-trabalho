@@ -14,25 +14,24 @@ import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeoutException;
 
 /**
  * @author Ian Marcos Gomes e Freitas
  * @author João Roberto de Moraes Neto
  *
- *
  */
 public class RoutingInformationProtocol
     implements UnicastServiceUserInterface, RoutingProtocolManagementInterface {
-    private final short UCSAPID = 0;
     private UnicastServiceInterface unicastInterface;
-    private RoutingProtocolManagementServiceUserInterface ripServiceUserInterface;
+    private final RoutingProtocolManagementServiceUserInterface ripServiceUserInterface;
     private RoutingInformationConfiguration networkTopology;
+
+    // Repeat-on-timeout auxiliary fields
     private RoutingInformationProtocolOperation latestOperation;
     private short latestNodeId;
     private Timer operationResponseTimeout;
-    private Semaphore latestDataAccess;
-    private int timeoutMilliseconds;
+    private final Semaphore latestDataAccess;
+    private final int timeoutMilliseconds;
 
     public RoutingInformationProtocol (
         RoutingProtocolManagementServiceUserInterface ripServiceUserInterface, int timeoutMilliseconds, int port
@@ -61,7 +60,8 @@ public class RoutingInformationProtocol
 
         unicastInterface = null;
         try {
-            unicastInterface = new UnicastProtocol(UCSAPID, port, this);
+            // Manager ID is ALWAYS 0
+            unicastInterface = new UnicastProtocol((short) 0, port, this);
         } catch (IllegalArgumentException iae) {
             System.err.println("Erro : Conjunto ID e Porta não foram encontrados no arquivo de configuração do Unicast");
         } catch (FileNotFoundException fnfe) {
@@ -121,10 +121,10 @@ public class RoutingInformationProtocol
         short secondNodeId,
         int newLinkCost
     ) {
-        if (
-            !(isLinkValid(firstNodeId, secondNodeId) &&
-                isCostValid(newLinkCost))
-        ) {
+        boolean isLinkValid = isLinkValid(firstNodeId, secondNodeId);
+        boolean isCostValid = isCostValid(newLinkCost);
+
+        if (!(isLinkValid && isCostValid)) {
             return false;
         }
 

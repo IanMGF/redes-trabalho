@@ -129,6 +129,9 @@ public class TestApplication {
             }
         }
         sc.close();
+        // Despite the possibility to use `protocol` as an instance of UnicastProtocol,
+        // this is the only time the specific implementation matters
+        @SuppressWarnings("CastCanBeRemovedNarrowingVariableType")
         UnicastProtocol protocol = (UnicastProtocol) unicastProtocol;
         protocol.stop();
     }
