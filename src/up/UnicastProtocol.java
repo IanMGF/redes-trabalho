@@ -23,7 +23,7 @@ public class UnicastProtocol implements UnicastServiceInterface {
     private static final Pattern PATTERN = Pattern.compile(PDU_PREFIX + " ([0-9]+) ((.|\n|\r)*)");
 
     // Despite the non-use of UCSApId, it is semantically incoherent to not store such information
-    @SuppressWarnings("FieldCanBeLocal")
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final short UCSApId;
 
     private final DatagramSocket socket;
