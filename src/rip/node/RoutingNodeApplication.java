@@ -1,6 +1,5 @@
 package rip.node;
 
-import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class RoutingNodeApplication {
