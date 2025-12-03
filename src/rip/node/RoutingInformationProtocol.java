@@ -113,7 +113,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         periodicSender.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                notifyNeighbors();
+                notifyDistanceChangeToNeighbors();
             }
         }, timeoutSeconds * 1_000, timeoutSeconds * 1_000);
     }
@@ -121,7 +121,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     /**
      * Updates {@link #distanceVector}, by calculating the new distance vector
      * (using {@link #calculateNewDistanceVector(int[])}). If the resulting vector is different from the current vector,
-     * calls {@link #notifyNeighbors()} to notify neighbor nodes about the update.
+     * calls {@link #notifyDistanceChangeToNeighbors()} to notify neighbor nodes about the update.
      */
     private void updateDistanceVector() {
         try {
@@ -130,7 +130,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
             if(!Arrays.equals(newDistanceVector, this.distanceVector)){
                 this.distanceVector = newDistanceVector;
                 distanceTableAccess.release();
-                notifyNeighbors();
+                notifyDistanceChangeToNeighbors();
             } else {
                 distanceTableAccess.release();
             }
@@ -192,7 +192,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
     /**
      * Notifies the neighbor nodes about a distance update
      */
-    private void notifyNeighbors(){
+    private void notifyDistanceChangeToNeighbors(){
         try {
             linkCostsAccess.acquire();
             for (int i = 0; i < this.linkCosts.length; i++) {
