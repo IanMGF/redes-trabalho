@@ -199,7 +199,7 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
                 if (equivalentId != this.nodeID && this.linkCosts[i] != null && this.linkCosts[i] != -1) {
 
                     distanceTableAccess.acquire();
-                    RoutingInformationProtocolIndication ripInd = new RoutingInformationProtocolIndication(equivalentId, distanceVector);
+                    RoutingInformationProtocolIndication ripInd = new RoutingInformationProtocolIndication(this.nodeID, distanceVector);
                     distanceTableAccess.release();
                     sendOperation(equivalentId, ripInd);
                 }
@@ -356,8 +356,8 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
                 && linkCosts[set.getNodeBId() - 1] != null
         ) {
             setLinkCost(set.getNodeBId(),  set.getCost());
-        } else if (ripOperation instanceof RoutingInformationProtocolIndication indication) {
-            updateNeighborsDistanceVectors(id, indication.getDistanceVector());
+        } else if (ripOperation instanceof RoutingInformationProtocolIndication indication && linkCosts[indication.getNodeId() - 1] != null) {
+            updateNeighborsDistanceVectors(indication.getNodeId(), indication.getDistanceVector());
         } else if (ripOperation instanceof RoutingInformationProtocolRequest && id == MANAGER_ID) {
             sendDistanceTable();
         }
