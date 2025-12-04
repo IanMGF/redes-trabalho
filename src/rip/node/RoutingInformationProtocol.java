@@ -275,47 +275,42 @@ public class RoutingInformationProtocol implements UnicastServiceUserInterface {
         }
     }
 
-    // TODO : CHANGE DOCUMENTATION
     /**
-     * Sends it's distance table to Manager as a response.
-     * Note: Most of the computation in this function is dedicated to map relative and global indexes of neighbors
-     * Ex: If Node 4 has neighbors 2, 6, 8 and 10, this function will create a vector mapping them as:
-     * 0 -> 2
-     * 1 -> 6
-     * 2 -> 8
-     * 3 -> 10
+     * Calculates and sends the distance table as the response of a Request message
      */
     private void sendDistanceTable(){
         try {
-            linkCostsAccess.acquire();
-
             // Calculates how many neighbors the node has
+            linkCostsAccess.acquire();
             int neighborsCount = 0;
             for (Integer linkCost : linkCosts) {
                 if (linkCost != null && linkCost != 0) {
                     neighborsCount++;
                 }
             }
-
             linkCostsAccess.release();
 
+            // Builds the distance table
             nodeDistancesAccess.acquire();
 
-            // Builds the distance table
             int[][] distanceTable = new int[neighborsCount + 1][nodeDistances.length];
-
             distanceTableAccess.acquire();
             distanceTable[0] = distanceVector.clone();
             distanceTableAccess.release();
 
-            // Checks if node is a neighbor and then add its distance vector to the table
-            int index = 1;
-            for (Integer[] nodeDistance : nodeDistances) {
-                if (nodeDistance[0] != null) {
-                    for (int i = 0; i < nodeDistance.length; i++) {
-                        distanceTable[index][i] = nodeDistance[i];
+            // Checks if node is a neighbor. If it is, add its distance vector to the table.
+            int tableIndex = 1;
+            for (int nodeIdx = 0; nodeIdx < nodeDistances.length; nodeIdx++) {
+                int neighborId = nodeIdx + 1;
+                Integer[] nodeDistanceVec = nodeDistances[nodeIdx];
+                linkCostsAccess.acquire();
+                boolean isNeighbor = linkCosts[nodeIdx] != null && neighborId != this.nodeID;
+                linkCostsAccess.release();
+                if (isNeighbor) {
+                    for (int i = 0; i < nodeDistanceVec.length; i++) {
+                        distanceTable[tableIndex][i] = nodeDistanceVec[i];
                     }
-                    index++;
+                    tableIndex++;
                 }
             }
 
