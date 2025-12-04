@@ -28,7 +28,7 @@ public class UnicastConfiguration {
     private final HashMap<Short, IPAddressAndPort> configurationMap =
         new HashMap<>();
 
-    /** Reads
+    /** Reads a given file and parses it to create a UnicastConfiguration object with its data
      *
      * @param file The file to read the configuration from
      * @return A configuration loaded from the file
